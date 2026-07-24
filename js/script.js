@@ -1,0 +1,891 @@
+/* ==========================================================================
+   GCCA Calgary — script.js
+   --------------------------------------------------------------------------
+   Everything the site needs, in one file. Start by filling in CONFIG below.
+   ========================================================================== */
+
+const CONFIG = {
+    /* ---------------------------------------------------------------------
+       1. Where forms post to. Leave a value empty and that form will tell you
+          it isn't connected yet instead of silently swallowing submissions.
+
+          Options for each: your own endpoint (e.g. "/api/contact" on Vercel),
+          a Formspree URL, or a Google Apps Script web app URL.
+       --------------------------------------------------------------------- */
+    api: {
+        contact:      '',   // e.g. '/api/contact'
+        newsletter:   '',   // e.g. '/api/newsletter'  (Mailchimp proxy)
+        registration: '',   // e.g. '/api/register'    (free RSVPs land here)
+        checkout:     ''    // e.g. '/api/create-checkout-session'  (Stripe)
+    },
+
+    /* ---------------------------------------------------------------------
+       2. Stripe. Two ways to take money:
+
+          A) Checkout Sessions (recommended) — set api.checkout above and
+             deploy api/create-checkout-session.js. Handles custom amounts,
+             monthly giving, and ticket quantities.
+
+          B) Payment Links (fastest) — create links in the Stripe dashboard
+             and paste them here. Used automatically if api.checkout is empty.
+       --------------------------------------------------------------------- */
+    stripe: {
+        paymentLinks: {
+            donateOneTime: '',        // https://buy.stripe.com/...
+            donateMonthly: '',        // https://buy.stripe.com/...
+            'independence': '',       // ticket link per paid event
+            'culture-night': ''
+        }
+    },
+
+    currency: 'CAD',
+    currencySymbol: '$'
+};
+
+/* ==========================================================================
+   Small helpers
+   ========================================================================== */
+const $  = (sel, scope = document) => scope.querySelector(sel);
+const $$ = (sel, scope = document) => Array.from(scope.querySelectorAll(sel));
+
+const money = (value) => {
+    const rounded = Math.round(Number(value) || 0);
+    return CONFIG.currencySymbol + rounded.toLocaleString('en-CA');
+};
+
+function setStatus(el, message, state) {
+    if (!el) return;
+    el.textContent = message || '';
+    if (state) el.setAttribute('data-state', state);
+    else el.removeAttribute('data-state');
+}
+
+/* ==========================================================================
+   Header, navigation, footer year
+   ========================================================================== */
+function initChrome() {
+    $$('[data-year]').forEach(el => { el.textContent = new Date().getFullYear(); });
+
+    const header = $('#siteHeader');
+    if (header) {
+        const onScroll = () => header.classList.toggle('is-stuck', window.scrollY > 12);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+    }
+
+    const toggle = $('#navToggle');
+    const nav = $('#primaryNav');
+    if (!toggle || !nav) return;
+
+    const closeNav = () => {
+        nav.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+        const open = nav.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(open));
+    });
+
+    nav.addEventListener('click', (e) => {
+        if (e.target.closest('a')) closeNav();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && nav.classList.contains('is-open')) {
+            closeNav();
+            toggle.focus();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!nav.classList.contains('is-open')) return;
+        if (e.target.closest('#primaryNav') || e.target.closest('#navToggle')) return;
+        closeNav();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 940) closeNav();
+    });
+}
+
+/* ==========================================================================
+   Scroll reveal
+   ========================================================================== */
+function initReveal() {
+    const items = $$('.reveal');
+    if (!items.length) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !('IntersectionObserver' in window)) {
+        items.forEach(el => el.classList.add('is-visible'));
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+        });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+
+    items.forEach(el => observer.observe(el));
+}
+
+/* ==========================================================================
+   Missing photos degrade into a labelled placeholder instead of a broken icon
+   ========================================================================== */
+function markImageMissing(img) {
+    if (!(img instanceof HTMLImageElement) || img.dataset.failed) return;
+    img.dataset.failed = 'true';
+
+    const file = (img.getAttribute('src') || '').split('/').pop() || 'image';
+    const holder = img.parentElement;
+    if (!holder) return;
+
+    holder.classList.add('media-fallback');
+    holder.setAttribute('data-file', 'Add ' + file);
+    img.style.visibility = 'hidden';
+    if (!holder.style.minHeight && holder.offsetHeight < 80) holder.style.minHeight = '220px';
+}
+
+function initImageFallbacks() {
+    // Images that fail later (including lazy-loaded ones).
+    document.addEventListener('error', (event) => markImageMissing(event.target), true);
+
+    // Images that already failed before this deferred script ran.
+    $$('img').forEach(img => {
+        if (img.complete && img.naturalWidth === 0) markImageMissing(img);
+    });
+}
+
+/* ==========================================================================
+   Form validation
+   ========================================================================== */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function fieldError(form, field, message) {
+    const slot = $('[data-error-for="' + field.id + '"]', form);
+    if (slot) slot.textContent = message || '';
+    if (message) field.setAttribute('aria-invalid', 'true');
+    else field.removeAttribute('aria-invalid');
+}
+
+function validateForm(form) {
+    let firstBad = null;
+
+    $$('input, select, textarea', form).forEach(field => {
+        if (!field.hasAttribute('required')) return;
+
+        let message = '';
+        const value = (field.value || '').trim();
+
+        if (!value) {
+            message = field.tagName === 'SELECT' ? 'Please choose an option.' : 'This field is required.';
+        } else if (field.type === 'email' && !EMAIL_RE.test(value)) {
+            message = 'Enter a valid email address, like name@example.com.';
+        }
+
+        fieldError(form, field, message);
+        if (message && !firstBad) firstBad = field;
+    });
+
+    if (firstBad) {
+        firstBad.focus();
+        firstBad.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    return !firstBad;
+}
+
+function clearErrorOnInput(form) {
+    form.addEventListener('input', (e) => {
+        const field = e.target;
+        if (field.matches('input, select, textarea') && field.getAttribute('aria-invalid') === 'true') {
+            fieldError(form, field, '');
+        }
+    });
+}
+
+function formData(form) {
+    const data = {};
+    new FormData(form).forEach((value, key) => { data[key] = value; });
+    return data;
+}
+
+async function postJSON(url, payload) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error('Request failed with status ' + response.status);
+    return response.json().catch(() => ({}));
+}
+
+const NOT_WIRED = 'This form isn\'t connected to an inbox yet. Add the endpoint in script.js → CONFIG.api.';
+
+/* ==========================================================================
+   Contact forms (home + about)
+   ========================================================================== */
+function initContactForms() {
+    $$('#contactForm, #contactFormAbout').forEach(form => {
+        const status = $('[data-status]', form);
+        clearErrorOnInput(form);
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!validateForm(form)) return;
+
+            const submit = $('button[type="submit"]', form);
+            const payload = Object.assign(formData(form), {
+                source: document.title,
+                submittedAt: new Date().toISOString()
+            });
+
+            if (!CONFIG.api.contact) {
+                console.info('[GCCA] Contact form payload:', payload);
+                setStatus(status, NOT_WIRED + 'contact — your message was logged to the console instead.', 'notice');
+                return;
+            }
+
+            submit && submit.setAttribute('disabled', 'true');
+            setStatus(status, 'Sending your message…', 'working');
+
+            try {
+                await postJSON(CONFIG.api.contact, payload);
+                form.reset();
+                setStatus(status, 'Thanks — your message is on its way. Someone from the executive will reply soon.', 'success');
+            } catch (error) {
+                console.error(error);
+                setStatus(status, 'That didn\'t go through. Please try again, or email info@gccacalgary.ca directly.', 'error');
+            } finally {
+                submit && submit.removeAttribute('disabled');
+            }
+        });
+    });
+}
+
+/* ==========================================================================
+   Newsletter signups (every page)
+   ========================================================================== */
+function initNewsletter() {
+    $$('[data-newsletter]').forEach(form => {
+        const status = form.parentElement ? $('[data-status]', form.parentElement) : null;
+        const input = $('input[type="email"]', form);
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = (input.value || '').trim();
+
+            if (!EMAIL_RE.test(email)) {
+                setStatus(status, 'Enter a valid email address so we know where to send it.', 'error');
+                input.focus();
+                return;
+            }
+
+            if (!CONFIG.api.newsletter) {
+                console.info('[GCCA] Newsletter signup:', email);
+                setStatus(status, NOT_WIRED + 'newsletter.', 'notice');
+                return;
+            }
+
+            const submit = $('button[type="submit"]', form);
+            submit && submit.setAttribute('disabled', 'true');
+            setStatus(status, 'Adding you to the list…', 'working');
+
+            try {
+                await postJSON(CONFIG.api.newsletter, { email, source: document.title });
+                form.reset();
+                setStatus(status, 'You\'re on the list. See you at the next celebration.', 'success');
+            } catch (error) {
+                console.error(error);
+                setStatus(status, 'We couldn\'t add you just now. Please try again in a moment.', 'error');
+            } finally {
+                submit && submit.removeAttribute('disabled');
+            }
+        });
+    });
+}
+
+/* ==========================================================================
+   Stripe checkout
+   ========================================================================== */
+async function startCheckout(payload, status) {
+    // Path A — your own Checkout Session endpoint.
+    if (CONFIG.api.checkout) {
+        setStatus(status, 'Opening secure checkout…', 'working');
+        try {
+            const data = await postJSON(CONFIG.api.checkout, payload);
+            if (data && data.url) {
+                window.location.assign(data.url);
+                return true;
+            }
+            throw new Error('No checkout URL returned');
+        } catch (error) {
+            console.error(error);
+            setStatus(status, 'Checkout couldn\'t start. Please try again, or email info@gccacalgary.ca.', 'error');
+            return false;
+        }
+    }
+
+    // Path B — a plain Stripe Payment Link.
+    const link = payload.paymentLink;
+    if (link) {
+        setStatus(status, 'Opening secure checkout…', 'working');
+        window.location.assign(link);
+        return true;
+    }
+
+    console.info('[GCCA] Checkout payload:', payload);
+    setStatus(status, 'Stripe isn\'t connected yet. Add CONFIG.api.checkout or a payment link in script.js.', 'notice');
+    return false;
+}
+
+/* ==========================================================================
+   Donations
+   ========================================================================== */
+function initDonations() {
+    const donateBtn = $('#donateBtn');
+    if (!donateBtn) return;
+
+    const freqButtons   = $$('[data-frequency]');
+    const amountButtons = $$('.amount-btn');
+    const custom        = $('#customAmount');
+    const totalEl       = $('#donateTotal');
+    const labelEl       = $('#donateLabel');
+    const btnLabel      = $('#donateBtnLabel');
+    const status        = $('#donateStatus');
+
+    const state = { frequency: 'one-time', amount: 50 };
+
+    function render() {
+        const monthly = state.frequency === 'monthly';
+        const valid = state.amount >= 5;
+
+        totalEl.textContent = valid ? money(state.amount) + (monthly ? '/mo' : '') : '—';
+        labelEl.textContent = monthly ? 'Your monthly gift' : 'Your one-time gift';
+        btnLabel.textContent = valid
+            ? (monthly ? 'Give ' + money(state.amount) + ' monthly' : 'Donate ' + money(state.amount))
+            : 'Choose an amount';
+
+        donateBtn.toggleAttribute('disabled', !valid);
+    }
+
+    freqButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.frequency = btn.dataset.frequency;
+            freqButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+            setStatus(status, '');
+            render();
+        });
+    });
+
+    amountButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.amount = Number(btn.dataset.amount);
+            amountButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+            if (custom) custom.value = '';
+            setStatus(status, '');
+            render();
+        });
+    });
+
+    if (custom) {
+        custom.addEventListener('input', () => {
+            const value = Number(custom.value);
+            amountButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+            state.amount = value > 0 ? value : 0;
+            render();
+        });
+    }
+
+    donateBtn.addEventListener('click', () => {
+        if (state.amount < 5) {
+            setStatus(status, 'Donations start at $5.', 'error');
+            return;
+        }
+        const monthly = state.frequency === 'monthly';
+        startCheckout({
+            type: 'donation',
+            frequency: state.frequency,
+            amount: state.amount,
+            currency: CONFIG.currency,
+            paymentLink: monthly ? CONFIG.stripe.paymentLinks.donateMonthly : CONFIG.stripe.paymentLinks.donateOneTime,
+            successUrl: window.location.origin + window.location.pathname + '?donation=success',
+            cancelUrl:  window.location.origin + window.location.pathname + '?donation=cancelled#donate'
+        }, status);
+    });
+
+    render();
+}
+
+/* ==========================================================================
+   The schedule — builds the upcoming list, the past archive, the home page
+   preview and the registration dropdown from events-data.js
+   ========================================================================== */
+const esc = (value) => String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function parseDay(iso) {
+    const parts = String(iso || '').split('-').map(Number);
+    return new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+}
+
+function eventPricing(ev) {
+    if (ev.adult === null || ev.adult === undefined) return 'tba';
+    return Number(ev.adult) > 0 ? 'paid' : 'free';
+}
+
+// An event stays "upcoming" until the end of its last day.
+function hasPassed(ev) {
+    const last = parseDay(ev.endsOn || ev.date);
+    last.setHours(23, 59, 59, 999);
+    return last < new Date();
+}
+
+function shortDate(ev) {
+    const date = parseDay(ev.date);
+    const month = date.toLocaleDateString('en-CA', { month: 'short' });
+    return ev.dateTbd ? month + ' TBD' : month + ' ' + date.getDate();
+}
+
+function longDate(ev) {
+    const date = parseDay(ev.date);
+    if (ev.dateTbd) {
+        return date.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }) + ' · date to be confirmed';
+    }
+    return date.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+const CTA_LABEL = { paid: 'Get tickets', free: 'Reserve a spot', tba: 'Register your interest' };
+
+function eventTag(ev, past) {
+    if (past) return '<span class="tag tag--muted">Held</span>';
+    const pricing = eventPricing(ev);
+    if (pricing === 'paid') return '<span class="tag">Tickets ' + money(ev.adult) + '</span>';
+    if (pricing === 'free') return '<span class="tag tag--free">Free · RSVP</span>';
+    return '<span class="tag tag--gold">Tickets · price to come</span>';
+}
+
+function eventCardHTML(ev, options) {
+    const opts = options || {};
+    const past = !!opts.past;
+    const date = parseDay(ev.date);
+    const where = [ev.venue, ev.address].filter(Boolean).join(', ');
+    const when = past
+        ? 'Held ' + longDate(ev)
+        : longDate(ev) + (ev.time ? ' · ' + ev.time : '');
+
+    const cta = past
+        ? '<p class="event-card__past-note">Thanks to everyone who came out.</p>'
+        : '<a class="link-arrow" href="' + esc(opts.href || '#register') + '" data-event-select="' + esc(ev.slug) + '">' +
+        esc(CTA_LABEL[eventPricing(ev)]) +
+        ' <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg></a>';
+
+    return '' +
+        '<article class="card event-card reveal' + (past ? ' event-card--past' : '') + '"' +
+        (opts.hidden ? ' hidden' : '') + ' id="event-' + esc(ev.slug) + '">' +
+        '<div class="event-card__media">' +
+        '<span class="date-badge">' +
+        '<span class="date-badge__month">' + esc(date.toLocaleDateString('en-CA', { month: 'short' })) + '</span>' +
+        '<span class="date-badge__day' + (ev.dateTbd ? ' date-badge__day--tbd' : '') + '">' +
+        (ev.dateTbd ? 'TBD' : date.getDate()) + '</span>' +
+        '</span>' +
+        (ev.image
+            ? '<img src="' + esc(ev.image) + '" alt="' + esc(ev.title) + '" width="600" height="600" loading="lazy">'
+            : '') +
+        '</div>' +
+        '<div class="event-card__body">' +
+        eventTag(ev, past) +
+        '<h3 class="event-card__title" style="margin-top:.6rem">' + esc(ev.title) + '</h3>' +
+        '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-calendar"/></svg> ' + esc(when) + '</p>' +
+        (where ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-pin"/></svg> ' + esc(where) + '</p>' : '') +
+        '<p class="event-card__text">' + esc(ev.blurb) + '</p>' +
+        cta +
+        '</div>' +
+        '</article>';
+}
+
+function populateEventSelect(upcoming) {
+    const select = document.getElementById('eventChoice');
+    if (!select) return;
+
+    const options = upcoming.map(ev => {
+        const pricing = eventPricing(ev);
+        const suffix = pricing === 'free' ? ' (free)' : (pricing === 'tba' ? ' (price to come)' : '');
+        return '<option value="' + esc(ev.slug) + '"' +
+            ' data-pricing="' + pricing + '"' +
+            ' data-adult="' + (Number(ev.adult) || 0) + '"' +
+            ' data-youth="' + (Number(ev.youth) || 0) + '"' +
+            ' data-name="' + esc(ev.title) + '"' +
+            ' data-date="' + esc(shortDate(ev)) + '">' +
+            esc(ev.title + ' — ' + shortDate(ev) + suffix) + '</option>';
+    }).join('');
+
+    select.innerHTML = '<option value="">Choose an event</option>' + options;
+}
+
+function injectEventSchema(upcoming) {
+    if (!upcoming.length) return;
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: upcoming.map((ev, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+                '@type': 'Event',
+                name: ev.title,
+                startDate: ev.date,
+                description: ev.blurb,
+                eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+                location: {
+                    '@type': 'Place',
+                    name: ev.venue || 'Calgary',
+                    address: ev.address || 'Calgary, AB, Canada'
+                },
+                organizer: { '@type': 'Organization', name: 'GCCA Calgary' }
+            }
+        }))
+    });
+    document.head.appendChild(script);
+}
+
+function initEvents() {
+    const all = Array.isArray(window.GCCA_EVENTS) ? window.GCCA_EVENTS.slice() : [];
+    if (!all.length) return;
+
+    const byDateAsc  = (a, b) => parseDay(a.date) - parseDay(b.date);
+    const byDateDesc = (a, b) => parseDay(b.date) - parseDay(a.date);
+
+    const upcoming = all.filter(ev => !hasPassed(ev)).sort(byDateAsc);
+    const past     = all.filter(hasPassed).sort(byDateDesc);
+
+    // Home page — the next three.
+    const preview = document.getElementById('eventPreview');
+    if (preview) {
+        preview.innerHTML = upcoming.length
+            ? upcoming.slice(0, 3).map(ev =>
+                eventCardHTML(ev, { href: 'events.html?event=' + encodeURIComponent(ev.slug) + '#register' })).join('')
+            : '<p class="events-empty">Next season\'s schedule is on its way. Join the mailing list below to hear it first.</p>';
+    }
+
+    // Events page — everything.
+    const list = document.getElementById('upcomingList');
+    if (list) {
+        list.innerHTML = upcoming.map(ev => eventCardHTML(ev, { href: '#register' })).join('');
+
+        const empty = document.getElementById('upcomingEmpty');
+        if (empty) empty.hidden = upcoming.length > 0;
+
+        const pastList = document.getElementById('pastList');
+        const pastSection = document.getElementById('past');
+        const toggle = document.getElementById('pastToggle');
+        const VISIBLE = 3;
+
+        if (pastList && pastSection && past.length) {
+            pastSection.hidden = false;
+            pastList.innerHTML = past.map((ev, index) =>
+                eventCardHTML(ev, { past: true, hidden: index >= VISIBLE })).join('');
+
+            if (toggle && past.length > VISIBLE) {
+                toggle.hidden = false;
+                toggle.textContent = 'Show all ' + past.length + ' past events';
+                toggle.addEventListener('click', () => {
+                    const hiddenCards = $$('#pastList .event-card[hidden]');
+                    if (hiddenCards.length) {
+                        hiddenCards.forEach(card => { card.hidden = false; card.classList.add('is-visible'); });
+                        toggle.textContent = 'Show fewer';
+                    } else {
+                        $$('#pastList .event-card').forEach((card, index) => { card.hidden = index >= VISIBLE; });
+                        toggle.textContent = 'Show all ' + past.length + ' past events';
+                        pastSection.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                    }
+                });
+            }
+        }
+
+        populateEventSelect(upcoming);
+        injectEventSchema(upcoming);
+    }
+}
+
+/* ==========================================================================
+   Event registration and ticketing
+   ========================================================================== */
+function initRegistration() {
+    const form = $('#registrationForm');
+    if (!form) return;
+
+    const select    = $('#eventChoice');
+    const adultQty  = $('#adultQty');
+    const youthQty  = $('#youthQty');
+    const orderEvent = $('#orderEvent');
+    const totalEl   = $('#orderTotal');
+    const totalLabel = $('#orderTotalLabel');
+    const btnLabel  = $('#registerBtnLabel');
+    const status    = $('[data-status]', form);
+    const submitBtn = $('#registerBtn');
+
+    clearErrorOnInput(form);
+
+    function clampQty(input) {
+        const min = Number(input.min || 0);
+        const max = Number(input.max || 20);
+        let value = Math.round(Number(input.value) || 0);
+        value = Math.min(max, Math.max(min, value));
+        input.value = String(value);
+        return value;
+    }
+
+    function currentOrder() {
+        const option = select.selectedOptions[0];
+        const pricing = option && select.value ? (option.dataset.pricing || 'free') : '';
+        const adultPrice = option ? Number(option.dataset.adult || 0) : 0;
+        const youthPrice = option ? Number(option.dataset.youth || 0) : 0;
+        const adults = clampQty(adultQty);
+        const youth  = clampQty(youthQty);
+
+        return {
+            slug: select.value,
+            name: option ? (option.dataset.name || '') : '',
+            date: option ? (option.dataset.date || '') : '',
+            pricing, adults, youth, adultPrice, youthPrice,
+            total: adults * adultPrice + youth * youthPrice
+        };
+    }
+
+    function render() {
+        const order = currentOrder();
+        const lineAdults = $('[data-line="adults"]');
+        const lineYouth  = $('[data-line="youth"]');
+
+        if (!order.slug) {
+            orderEvent.textContent = 'No event selected yet.';
+            lineAdults.textContent = '—';
+            lineYouth.textContent = '—';
+            totalLabel.textContent = 'Total';
+            totalEl.textContent = money(0);
+            btnLabel.textContent = 'Complete registration';
+            return;
+        }
+
+        orderEvent.textContent = order.name + (order.date ? ' · ' + order.date : '');
+
+        const priced = order.pricing === 'paid';
+        lineAdults.textContent = priced
+            ? order.adults + ' × ' + money(order.adultPrice) + ' = ' + money(order.adults * order.adultPrice)
+            : order.adults + ' attending';
+
+        lineYouth.textContent = priced
+            ? order.youth + ' × ' + money(order.youthPrice) + ' = ' + money(order.youth * order.youthPrice)
+            : order.youth + ' attending';
+
+        if (order.pricing === 'free') {
+            totalLabel.textContent = 'This event is free';
+            totalEl.textContent = 'Free';
+            btnLabel.textContent = 'Confirm your RSVP';
+        } else if (order.pricing === 'tba') {
+            totalLabel.textContent = 'Ticket price';
+            totalEl.textContent = 'To come';
+            btnLabel.textContent = 'Register your interest';
+        } else {
+            totalLabel.textContent = 'Total (' + CONFIG.currency + ')';
+            totalEl.textContent = money(order.total);
+            btnLabel.textContent = order.total > 0 ? 'Pay ' + money(order.total) : 'Add at least one ticket';
+        }
+    }
+
+    select.addEventListener('change', () => { setStatus(status, ''); render(); });
+    [adultQty, youthQty].forEach(input => input.addEventListener('input', render));
+
+    $$('.qty button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            input.value = String(Number(input.value || 0) + Number(btn.dataset.step));
+            clampQty(input);
+            render();
+        });
+    });
+
+    // Pre-select an event from ?event=slug or from a card link
+    const requested = new URLSearchParams(window.location.search).get('event');
+    if (requested && $$('option', select).some(o => o.value === requested)) {
+        select.value = requested;
+    }
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('[data-event-select]');
+        if (!link) return;
+        select.value = link.dataset.eventSelect;
+        setStatus(status, '');
+        render();
+        window.setTimeout(() => select.focus({ preventScroll: true }), 400);
+    });
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!validateForm(form)) return;
+
+        const order = currentOrder();
+        if (order.adults + order.youth < 1) {
+            setStatus(status, 'Add at least one ticket before registering.', 'error');
+            return;
+        }
+
+        const payload = Object.assign(formData(form), {
+            type: 'registration',
+            eventSlug: order.slug,
+            eventName: order.name,
+            adults: order.adults,
+            youth: order.youth,
+            total: order.total,
+            currency: CONFIG.currency,
+            paymentLink: CONFIG.stripe.paymentLinks[order.slug] || '',
+            successUrl: window.location.origin + window.location.pathname + '?registration=success',
+            cancelUrl:  window.location.origin + window.location.pathname + '?registration=cancelled#register'
+        });
+
+        // Paid event → straight to Stripe.
+        if (order.pricing === 'paid' && order.total > 0) {
+            submitBtn && submitBtn.setAttribute('disabled', 'true');
+            const started = await startCheckout(payload, status);
+            if (!started) submitBtn && submitBtn.removeAttribute('disabled');
+            return;
+        }
+
+        // Free event, or one whose price isn't set yet → just record the RSVP.
+        if (!CONFIG.api.registration) {
+            console.info('[GCCA] Registration payload:', payload);
+            setStatus(status, NOT_WIRED + 'registration — your RSVP was logged to the console instead.', 'notice');
+            return;
+        }
+
+        submitBtn && submitBtn.setAttribute('disabled', 'true');
+        setStatus(status, 'Saving your spot…', 'working');
+
+        try {
+            await postJSON(CONFIG.api.registration, payload);
+            form.reset();
+            render();
+            setStatus(status, order.pricing === 'tba'
+                ? 'Noted — we\'ll email you as soon as tickets go on sale.'
+                : 'You\'re registered. Check your email for confirmation — see you there.', 'success');
+        } catch (error) {
+            console.error(error);
+            setStatus(status, 'We couldn\'t save that. Please try again, or email info@gccacalgary.ca.', 'error');
+        } finally {
+            submitBtn && submitBtn.removeAttribute('disabled');
+        }
+    });
+
+    render();
+}
+
+/* ==========================================================================
+   Messages after returning from Stripe
+   ========================================================================== */
+function initReturnMessages() {
+    const params = new URLSearchParams(window.location.search);
+
+    const cases = [
+        { key: 'donation',     target: '#donateStatus',
+            success: 'Thank you. Your donation went through — a receipt is on its way to your email.',
+            cancelled: 'No charge was made. Your donation is still here whenever you\'re ready.' },
+        { key: 'registration', target: '#registrationForm [data-status]',
+            success: 'You\'re registered and paid. Confirmation and tickets are in your email.',
+            cancelled: 'Checkout was cancelled and nothing was charged. Your details are still filled in.' }
+    ];
+
+    cases.forEach(item => {
+        const value = params.get(item.key);
+        if (!value) return;
+        const el = $(item.target);
+        if (!el) return;
+
+        setStatus(el, value === 'success' ? item.success : item.cancelled,
+            value === 'success' ? 'success' : 'notice');
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+}
+
+/* ==========================================================================
+   Culture page tabs
+   ========================================================================== */
+function initTabs() {
+    $$('[data-tabs]').forEach(group => {
+        const tabs = $$('[role="tab"]', group);
+        if (!tabs.length) return;
+
+        function activate(tab, setFocus = true) {
+            tabs.forEach(item => {
+                const selected = item === tab;
+                item.setAttribute('aria-selected', String(selected));
+                item.tabIndex = selected ? 0 : -1;
+                const panel = document.getElementById(item.getAttribute('aria-controls'));
+                if (panel) panel.hidden = !selected;
+            });
+            if (setFocus) tab.focus();
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => activate(tab, false));
+            tab.addEventListener('keydown', (event) => {
+                const index = tabs.indexOf(tab);
+                let next = null;
+
+                if (event.key === 'ArrowRight') next = tabs[(index + 1) % tabs.length];
+                else if (event.key === 'ArrowLeft') next = tabs[(index - 1 + tabs.length) % tabs.length];
+                else if (event.key === 'Home') next = tabs[0];
+                else if (event.key === 'End') next = tabs[tabs.length - 1];
+
+                if (next) {
+                    event.preventDefault();
+                    activate(next);
+                }
+            });
+        });
+
+        // Deep links: culture.html#music opens the matching tab.
+        const hash = window.location.hash.replace('#', '');
+        if (hash) {
+            const match = tabs.find(tab => tab.id === 'tab-' + hash);
+            if (match) activate(match, false);
+        }
+
+        // Tiles at the top of the page link to #food, #music, and so on.
+        $$('a[href^="#"]').forEach(link => {
+            const target = link.getAttribute('href').slice(1);
+            const match = tabs.find(tab => tab.id === 'tab-' + target);
+            if (!match) return;
+            link.addEventListener('click', () => activate(match, false));
+        });
+    });
+}
+
+/* ==========================================================================
+   Boot
+   ========================================================================== */
+function init() {
+    initChrome();
+    initEvents();
+    initReveal();
+    initImageFallbacks();
+    initContactForms();
+    initNewsletter();
+    initDonations();
+    initRegistration();
+    initTabs();
+    initReturnMessages();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
