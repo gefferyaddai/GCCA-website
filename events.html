@@ -32,6 +32,7 @@
   <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.6 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.3H7.6V13h2.8v8h3.2Z"/></symbol>
   <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.6 4.6 4.5L19 7"/></symbol>
+  <symbol id="i-maple" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></symbol>
 </svg>
 
 <header class="site-header" id="siteHeader">
@@ -44,7 +45,7 @@
           <span class="brand__city">Calgary</span>
         </span>
         <span class="brand__rule" aria-hidden="true"></span>
-        <span class="brand__full">Guyana Canadian<br>Cultural Association</span>
+        <span class="brand__full">Guyana Canada<br>Cultural Association</span>
       </span>
     </a>
 
@@ -60,7 +61,7 @@
         <li><a class="nav__link" href="events.html" aria-current="page">Events</a></li>
         <li><a class="nav__link" href="culture.html">Culture</a></li>
       </ul>
-      <a class="btn btn--primary nav__cta" href="index.html#donate">Donate</a>
+      <a class="btn btn--primary nav__cta" href="index.html#membership">Become a member</a>
     </nav>
   </div>
 </header>
@@ -111,7 +112,7 @@
         <div>
           <span class="eyebrow">June 2026 – May 2027 season</span>
           <h2 class="section-title" style="margin-bottom:.2em">Upcoming Events</h2>
-          <p class="section-intro" style="margin-bottom:0">All events are open to the public. Children under 6 always come free.</p>
+          <p class="section-intro" style="margin-bottom:0">All events are open to the public. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
         </div>
         <a class="link-arrow" href="#register">Register now
           <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
@@ -128,7 +129,7 @@
 
       <noscript>
         <p class="events-empty">The full schedule needs JavaScript to display.
-          Email <a href="mailto:info@gccacalgary.ca">info@gccacalgary.ca</a> and we'll send it to you.</p>
+          Email <a href="mailto:gccacalgary@gmail.com">gccacalgary@gmail.com</a> and we'll send it to you.</p>
       </noscript>
     </div>
   </section>
@@ -161,7 +162,7 @@
         <div>
           <span class="eyebrow">Registration &amp; tickets</span>
           <h2 class="section-title">Save your seat.</h2>
-          <p class="section-intro" style="margin-bottom:0">Register once and we'll email your confirmation. Paid events check out through Stripe — free events just need an RSVP so we know how much food to cook.</p>
+          <p class="section-intro" style="margin-bottom:0">Register once and we'll email your confirmation. Free events just need an RSVP so we know how much food to cook — for ticketed events the executive will confirm your spot and how to pay.</p>
         </div>
       </div>
 
@@ -201,11 +202,11 @@
                 </div>
               </div>
               <div class="field">
-                <label for="youthQty">Youth <span class="field__hint">(6–17, under 6 free)</span></label>
+                <label for="youthQty">Children <span class="field__hint">(2–17, under 2 free)</span></label>
                 <div class="qty">
-                  <button type="button" data-step="-1" data-target="youthQty" aria-label="One fewer youth ticket">&minus;</button>
+                  <button type="button" data-step="-1" data-target="youthQty" aria-label="One fewer child ticket">&minus;</button>
                   <input type="number" id="youthQty" name="youth" value="0" min="0" max="20" inputmode="numeric">
-                  <button type="button" data-step="1" data-target="youthQty" aria-label="One more youth ticket">+</button>
+                  <button type="button" data-step="1" data-target="youthQty" aria-label="One more child ticket">+</button>
                 </div>
               </div>
 
@@ -230,7 +231,7 @@
           <p style="font-size:.9rem;color:var(--ink-soft);margin-bottom:1.1rem" id="orderEvent">No event selected yet.</p>
           <ul class="order-lines" id="orderLines">
             <li><span>Adult tickets</span><b data-line="adults">—</b></li>
-            <li><span>Youth tickets</span><b data-line="youth">—</b></li>
+            <li><span>Child tickets</span><b data-line="youth">—</b></li>
           </ul>
           <p class="order-total">
             <span id="orderTotalLabel">Total</span>
@@ -242,9 +243,10 @@
           </button>
           <p class="secure-note">
             <svg aria-hidden="true"><use href="#i-lock"/></svg>
-            Card payments are handled by Stripe.
+            Your details go straight to the executive and are never shared outside the association.
           </p>
-          <p class="form-footnote" style="margin-top:12px">Need to cancel or change a booking? Email <a href="mailto:info@gccacalgary.ca">info@gccacalgary.ca</a>.</p>
+          <!-- TODO: replace the note below with the refund / cancellation policy once the executive has agreed one. -->
+          <p class="form-footnote" style="margin-top:12px">Need to cancel or change a booking? Email <a href="mailto:gccacalgary@gmail.com">gccacalgary@gmail.com</a> and we'll sort it out.</p>
         </aside>
       </div>
     </div>
@@ -288,9 +290,9 @@
             </span>
           </span>
         </div>
-        <p class="footer__about">The Guyana Canadian Cultural Association of Calgary — celebrating Guyanese heritage, connecting generations, and building community across the city.</p>
+        <p class="footer__about">The Guyana Canada Cultural Association (Calgary) — celebrating Guyanese heritage, connecting generations, and building community across the city. An active non-profit society since 1991.</p>
         <div class="footer__socials">
-          <a class="footer__social" href="https://www.facebook.com/GccaCalgary" target="_blank" rel="noopener" aria-label="GCCA Calgary on Facebook"><svg aria-hidden="true"><use href="#i-facebook"/></svg></a>
+          <a class="footer__social" href="https://www.facebook.com/GccaCalgary/" target="_blank" rel="noopener" aria-label="GCCA Calgary on Facebook"><svg aria-hidden="true"><use href="#i-facebook"/></svg></a>
           <a class="footer__social" href="https://www.instagram.com/gccacalgary/" target="_blank" rel="noopener" aria-label="GCCA Calgary on Instagram"><svg aria-hidden="true"><use href="#i-instagram"/></svg></a>
         </div>
       </div>
@@ -306,23 +308,29 @@
       <div>
         <h2 class="footer__title">Take part</h2>
         <ul class="footer__list">
-          <li><a href="index.html#donate">Donate</a></li>
+          <li><a href="index.html#membership">Become a member</a></li>
           <li><a href="events.html#register">Register for an event</a></li>
           <li><a href="about.html#team">Executive team</a></li>
+          <li><a href="about.html#governance">Our by-laws</a></li>
           <li><a href="about.html#contact">Volunteer with us</a></li>
         </ul>
       </div>
       <div>
         <h2 class="footer__title">Contact</h2>
         <ul class="footer__list">
-          <li><a href="mailto:info@gccacalgary.ca">info@gccacalgary.ca</a></li>
-          <li><a href="tel:+14035550100">(403) 555-0100</a></li>
-          <li>Calgary, Alberta</li>
+          <li><a href="mailto:gccacalgary@gmail.com">gccacalgary@gmail.com</a></li>
+          <li>PO Box 47115, RPO Creekside<br>Calgary, AB&nbsp;&nbsp;T3P 0B9</li>
         </ul>
       </div>
     </div>
+
+    <div class="land-ack">
+      <span class="land-ack__mark" aria-hidden="true"><svg><use href="#i-maple"/></svg></span>
+      <p>The GCCA acknowledges that we are operating in the traditional territories of the Blackfoot and the people of the Treaty 7 region in Southern Alberta. The City of Calgary is also home to the Métis Nation of Alberta, Region III.</p>
+    </div>
+
     <div class="footer__bar">
-      <p style="margin:0">&copy; <span data-year>2026</span> Guyana Canadian Cultural Association of Calgary. All rights reserved.</p>
+      <p style="margin:0">&copy; <span data-year>2026</span> Guyana Canada Cultural Association (Calgary). All rights reserved.</p>
       <p style="margin:0">One People, One Nation, One Destiny.</p>
     </div>
   </div>
