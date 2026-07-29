@@ -1,10 +1,11 @@
 /* ==========================================================================
-   GCCA Calgary — Guyana Canadian Cultural Association
+   GCCA Calgary — Guyana Canada Cultural Association (Calgary)
    styles.css — one stylesheet for all four pages
    --------------------------------------------------------------------------
    Palette and type are taken directly from the design mockups.
    Signature motif: the Golden Arrowhead chevron from the Guyanese flag,
    used as the hero mask, section markers, dividers and hover accents.
+   Canadian flag red appears alongside it as a second accent — Guyana-Canada.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -35,6 +36,11 @@
     /* Flag red / black */
     --red:         #CE1126;
     --flag-black:  #0C0C0C;
+
+    /* Canadian flag red — we are Guyana *and* Canada */
+    --maple:       #D80621;
+    --maple-700:   #A4041A;
+    --maple-100:   #FBE4E6;
 
     /* Text */
     --ink:         #2E3129;
@@ -520,6 +526,7 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 }
 .icon-well svg { width: 30px; height: 30px; }
 .icon-well--gold { background: var(--gold); color: var(--green-900); }
+.icon-well--maple { background: var(--maple-100); color: var(--maple-700); }
 .icon-well--sm { width: 46px; height: 46px; }
 .icon-well--sm svg { width: 22px; height: 22px; }
 
@@ -1045,79 +1052,94 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 }
 
 /* --------------------------------------------------------------------------
-   16. Donations
+   16. Membership — fee tiers, benefits, application form
    -------------------------------------------------------------------------- */
-.donate-layout {
+.membership-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, .92fr);
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1fr);
     gap: clamp(30px, 4.5vw, 68px);
     align-items: start;
+    margin-top: clamp(34px, 4vw, 58px);
 }
 
-.segmented {
+.membership__subhead {
+    font-size: 1.35rem;
+    margin-bottom: 1.4rem;
+}
+
+/* Four fee cards, each carrying a different flag colour along the top edge. */
+.tier-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-    padding: 4px;
-    background: var(--cream-2);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+}
+.tier {
+    position: relative;
+    padding: 26px 24px 24px;
+    background: var(--paper);
     border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
-}
-.segmented__btn {
-    padding: .68em 1em;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: transparent;
-    font-size: .92rem;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-    transition: background .22s var(--ease), color .22s var(--ease);
-}
-.segmented__btn[aria-pressed="true"] {
-    background: var(--green-700);
-    color: #fff;
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    transition: transform .28s var(--ease), box-shadow .28s var(--ease);
 }
+.tier::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--green-600);
+}
+.tier:nth-child(2)::before { background: var(--gold); }
+.tier:nth-child(3)::before { background: var(--maple); }
+.tier:nth-child(4)::before { background: var(--flag-black); }
+.tier:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+.tier__name {
+    font-size: 1.3rem;
+    margin-bottom: .5rem;
+}
+.tier__price {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 .9rem;
+}
+.tier__price strong {
+    font-family: var(--font-display);
+    font-size: 2.3rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--green-800);
+}
+.tier__price span {
+    font-size: .82rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+.tier__who {
+    font-size: .9rem;
+    color: var(--ink-soft);
+    margin: 0;
+}
+.tier__who b { color: var(--green-800); }
 
-.amount-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 18px;
-}
-.amount-btn {
-    padding: .82em .4em;
-    background: #fff;
-    border: 1.5px solid var(--line-strong);
-    border-radius: var(--radius);
+.benefit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+.benefit-list li { display: flex; gap: 16px; align-items: flex-start; }
+.benefit-list b {
+    display: block;
     font-family: var(--font-display);
     font-size: 1.14rem;
     font-weight: 600;
     color: var(--green-900);
-    cursor: pointer;
-    transition: border-color .2s var(--ease), background .2s var(--ease), transform .2s var(--ease);
+    margin-bottom: .18rem;
 }
-.amount-btn:hover { border-color: var(--green-700); transform: translateY(-2px); }
-.amount-btn[aria-pressed="true"] {
-    background: var(--green-700);
-    border-color: var(--green-700);
-    color: #fff;
-}
+.benefit-list span { font-size: .95rem; color: var(--ink-soft); }
 
-.amount-custom { margin-top: 14px; }
-.amount-custom__wrap { position: relative; }
-.amount-custom__wrap::before {
-    content: "$";
-    position: absolute;
-    left: 14px; top: 50%;
-    transform: translateY(-50%);
-    font-weight: 600;
-    color: var(--ink-faint);
-}
-.amount-custom input { padding-left: 2em; }
-
-.donate-summary {
+.fee-summary {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -1128,29 +1150,12 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     font-size: .92rem;
     color: var(--ink-soft);
 }
-.donate-summary strong {
+.fee-summary strong {
     font-family: var(--font-display);
     font-size: 1.7rem;
     font-weight: 600;
     color: var(--green-900);
 }
-
-.impact-list { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: 16px; }
-.impact-list li {
-    display: grid;
-    grid-template-columns: 74px 1fr;
-    gap: 16px;
-    align-items: baseline;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--line);
-}
-.impact-list li:last-child { border-bottom: 0; padding-bottom: 0; }
-.impact-list b {
-    font-family: var(--font-display);
-    font-size: 1.28rem;
-    color: var(--gold-600);
-}
-.impact-list span { font-size: .95rem; color: var(--ink-soft); }
 
 .secure-note {
     display: flex;
@@ -1466,6 +1471,7 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     .nav__list { gap: 26px; }
     .card-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .card-grid--3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tier-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 940px) {
@@ -1512,7 +1518,8 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 
     .split,
     .contact-layout,
-    .donate-layout,
+    .membership-layout,
+    .gov-grid,
     .register-layout { grid-template-columns: 1fr; }
     .split--reverse .split__media { order: -1; }
     .split--wide-right { grid-template-columns: 1fr; }
@@ -1544,8 +1551,10 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     .brand__city { font-size: .62rem; letter-spacing: .28em; }
 
     .field-grid { grid-template-columns: 1fr; }
-    .amount-grid { grid-template-columns: repeat(2, 1fr); }
+    .tier-grid { grid-template-columns: 1fr; }
     .card-grid--4 { grid-template-columns: 1fr; }
+    .feedback-callout { flex-direction: column; }
+    .land-ack { grid-template-columns: 1fr; }
     .footer__grid { grid-template-columns: 1fr; }
     .quote-band blockquote::before,
     .quote-band blockquote::after { display: none; }
@@ -1730,3 +1739,156 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 
 /* Two meta lines now sit under each event title */
 .event-card__meta + .event-card__meta { margin-top: -.55rem; }
+/* --------------------------------------------------------------------------
+   28. Governance — registration facts and by-laws
+   -------------------------------------------------------------------------- */
+.gov-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .82fr);
+    gap: clamp(28px, 4vw, 56px);
+    align-items: start;
+}
+
+.gov-facts { margin: 0; display: grid; gap: 0; }
+.gov-fact {
+    display: grid;
+    grid-template-columns: minmax(150px, 34%) 1fr;
+    gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+}
+.gov-fact:first-child { border-top: 1px solid var(--line); }
+.gov-fact dt {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--green-700);
+}
+.gov-fact dd {
+    margin: 0;
+    font-size: .98rem;
+    color: var(--ink);
+}
+
+.gov-card {
+    padding: clamp(26px, 3vw, 36px);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--gold);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+.gov-card h3 { font-size: 1.4rem; margin: 1.1rem 0 .55rem; }
+.gov-card p { font-size: .95rem; color: var(--ink-soft); }
+.gov-card .btn { margin-top: 1.2rem; }
+.gov-card__note {
+    margin-top: 1rem;
+    font-size: .84rem;
+    color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------------------------
+   29. Community feedback callout
+   -------------------------------------------------------------------------- */
+.feedback-callout {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin-top: 2.2rem;
+    padding: 26px 26px 28px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    /* a thin maple-red edge, to pair with the Guyanese gold elsewhere */
+    border-top: 4px solid var(--maple);
+}
+.feedback-callout__title {
+    font-size: 1.24rem;
+    margin-bottom: .4rem;
+}
+.feedback-callout__text {
+    font-size: .94rem;
+    color: var(--ink-soft);
+    margin-bottom: 1.1rem;
+}
+
+/* --------------------------------------------------------------------------
+   30. Land acknowledgement
+   -------------------------------------------------------------------------- */
+.land-ack {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 18px;
+    align-items: start;
+    margin-top: 46px;
+    padding: 24px 26px;
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: var(--radius-lg);
+}
+.land-ack p {
+    margin: 0;
+    font-size: .89rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, .78);
+}
+.land-ack__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(216, 6, 33, .22);
+    color: #F2A0A8;
+}
+.land-ack__mark svg { width: 22px; height: 22px; }
+
+/* --------------------------------------------------------------------------
+   31. More colour — Guyana and Canada
+   -------------------------------------------------------------------------- */
+
+/* A warm, sunlit band. Used for the membership section. */
+.section--sun {
+    background:
+            radial-gradient(120% 80% at 12% 0%, rgba(244, 194, 27, .22), transparent 62%),
+            radial-gradient(100% 90% at 92% 8%, rgba(216, 6, 33, .08), transparent 58%),
+            var(--cream);
+    border-top: 1px solid var(--gold-200);
+    border-bottom: 1px solid var(--gold-200);
+}
+
+/* The three home-page pillars pick up a flag colour each. */
+.pillar:nth-child(3) .icon-well { background: var(--maple-100); color: var(--maple-700); }
+
+/* Executive headshots drop straight into the initials slot.
+   The avatar is a circle, so a portrait photo gets cropped to a square —
+   biasing the crop above centre keeps the face framed with some headroom
+   instead of cutting off the top of the head. */
+.member__avatar { overflow: hidden; }
+.member__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+    border-radius: inherit;
+}
+
+.mission-card__meta {
+    margin-top: .8rem;
+    font-size: .84rem;
+    color: var(--gold-600);
+    font-weight: 600;
+}
+
+.membership__note {
+    margin-top: 2.2rem;
+    padding: 18px 20px;
+    background: rgba(255, 253, 246, .7);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: .9rem;
+    color: var(--ink-soft);
+}
