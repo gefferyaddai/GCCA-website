@@ -10,6 +10,8 @@
    Each entry:
      slug        Used in links (?event=slug) and in api/create-checkout-session.js.
                  Keep them matching.
+     image       Photo for the card, in /assets. Until the file exists the card
+                 shows a labelled placeholder naming the file to drop in.
      date        'YYYY-MM-DD'. Used for ordering and for the date badge.
      dateTbd     true when the day isn't confirmed — the badge shows "TBD"
                  and the event stays listed for the whole month.
@@ -33,7 +35,7 @@ window.GCCA_EVENTS = [
         time: 'Tee time 10:00am · Lunch 12:00pm',
         date: '2026-07-18',
         blurb: 'Fire up your swing and your appetite. Golf and BBQ lunch is the perfect combo.',
-        image: 'images/event-golf-bbq.jpg',
+        image: 'assets/event-golf-bbq.jpg',
         adult: null,
         youth: null
     },
@@ -45,7 +47,7 @@ window.GCCA_EVENTS = [
         time: 'Parade 12:30pm – 2:30pm',
         date: '2026-08-15',
         blurb: 'Join the GCCA parade for an afternoon of Caribbean rhythm and food. Prices are for a parade costume.',
-        image: 'images/event-carifest.jpg',
+        image: 'assets/event-carifest.jpg',
         adult: 50,
         youth: 30
     },
@@ -59,7 +61,7 @@ window.GCCA_EVENTS = [
         dateTbd: true,
         endsOn: '2026-09-30',
         blurb: 'Your voice shapes the future. Show up and be part of the decision making.',
-        image: 'images/event-general-meeting.jpg',
+        image: 'assets/event-general-meeting.jpg',
         adult: 0,
         youth: 0
     },
@@ -71,7 +73,7 @@ window.GCCA_EVENTS = [
         time: '9:00am – 5:00pm',
         date: '2026-09-12',
         blurb: 'Participate in one or more of the sports: football, basketball, cricket, dominoes, track & field.',
-        image: 'images/event-sports-day.jpg',
+        image: 'assets/event-sports-day.jpg',
         adult: 0,
         youth: 0
     },
@@ -83,7 +85,7 @@ window.GCCA_EVENTS = [
         time: '',
         date: '2026-10-10',
         blurb: 'Treat your buds to a taste of Guyanese cuisine.',
-        image: 'images/event-taste-of-guyana.jpg',
+        image: 'assets/event-taste-of-guyana.jpg',
         adult: null,
         youth: null
     },
@@ -95,7 +97,7 @@ window.GCCA_EVENTS = [
         time: '2:00pm',
         date: '2026-12-06',
         blurb: 'Come out for a magical afternoon with the family.',
-        image: 'images/event-christmas-party.jpg',
+        image: 'assets/event-christmas-party.jpg',
         adult: null,
         youth: null
     },
@@ -107,7 +109,7 @@ window.GCCA_EVENTS = [
         time: '',
         date: '2027-01-29',
         blurb: 'Roll in for strikes, stay for slices. Bowling and pizza night starts with YOU.',
-        image: 'images/event-bowling.jpg',
+        image: 'assets/event-bowling.jpg',
         adult: null,
         youth: null
     },
@@ -121,7 +123,7 @@ window.GCCA_EVENTS = [
         dateTbd: true,
         endsOn: '2027-02-28',
         blurb: 'Come out and be part of the decision making.',
-        image: 'images/event-games-night.jpg',
+        image: 'assets/event-games-night.jpg',
         adult: 0,
         youth: 0
     },
@@ -133,7 +135,7 @@ window.GCCA_EVENTS = [
         time: '',
         date: '2027-04-24',
         blurb: 'Thank you to our amazing volunteers!',
-        image: 'images/event-volunteer-dinner.jpg',
+        image: 'assets/event-volunteer-dinner.jpg',
         adult: 0,
         youth: 0
     },
@@ -145,7 +147,7 @@ window.GCCA_EVENTS = [
         time: '',
         date: '2027-05-09',
         blurb: 'Your voice shapes the future. Come out and vote.',
-        image: 'images/event-agm.jpg',
+        image: 'assets/event-agm.jpg',
         adult: 0,
         youth: 0
     },
@@ -157,7 +159,7 @@ window.GCCA_EVENTS = [
         time: '',
         date: '2027-05-22',
         blurb: "Celebrating another year of Guyana's independence.",
-        image: 'images/event-independence-gala.jpg',
+        image: 'assets/event-independence-gala.jpg',
         adult: null,
         youth: null
     },
@@ -173,7 +175,7 @@ window.GCCA_EVENTS = [
         date: '',
         onCall: true,
         blurb: 'Called when a matter needs the membership to decide before the next regular meeting.',
-        image: 'images/event-general-meeting.jpg',
+        image: 'assets/event-general-meeting.jpg',
         adult: 0,
         youth: 0
     }
