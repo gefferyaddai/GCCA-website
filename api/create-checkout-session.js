@@ -1,14 +1,21 @@
 /* ==========================================================================
    POST /api/create-checkout-session
    --------------------------------------------------------------------------
-   Creates a Stripe Checkout Session for either:
-     • a donation  — { type:'donation', frequency:'one-time'|'monthly', amount }
-     • a ticket order — { type:'registration', eventSlug, eventName, adults, youth, total }
+   Creates a Checkout Session for a ticket order:
+     { type:'registration', eventSlug, eventName, adults, youth, total }
 
-   Deploy on Vercel. Requires:
+   NOT IN USE YET. The association has no payment processor connected, so
+   script.js leaves CONFIG.api.checkout empty and paid registrations are
+   recorded for the executive to follow up on instead. This file is the
+   Stripe implementation, kept ready in case Stripe is the processor chosen.
+   If the association goes with Square instead, this is the file to rewrite —
+   the browser side only expects a JSON response of { url }.
+
+   To switch it on, deploy on Vercel with:
      npm install stripe
      STRIPE_SECRET_KEY   in your Vercel environment variables
      SITE_URL            e.g. https://gccacalgary.ca  (no trailing slash)
+   then set CONFIG.api.checkout = '/api/create-checkout-session' in script.js.
 
    Never put the secret key in script.js — it belongs on the server only.
    ========================================================================== */
@@ -20,15 +27,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 const CURRENCY = 'cad';
-const MIN_DONATION = 5;
-const MAX_DONATION = 25000;
 
 // Ticket prices live here, on the server, so nobody can edit them in the browser.
 // Keep the slugs and the numbers identical to events-data.js.
-// 0 means free (or price not announced yet) — those never reach Stripe.
+// 0 means free, or price not announced yet — those never reach the processor.
 const EVENTS = {
     'stampede-golf-bbq':             { name: 'Stampede Golf & BBQ',                             adult: 0, youth: 0 },
-    'carifest':                      { name: 'Carifest',                                        adult: 0, youth: 0 },
+    'carifest':                      { name: 'Carifest (parade costume)',                       adult: 50, youth: 30 },
     'rgm-september':                 { name: "Members' Regular General Meeting",                adult: 0, youth: 0 },
     'caribbean-sports-day':          { name: 'Caribbean Sports Day',                            adult: 0, youth: 0 },
     'taste-of-guyana':               { name: 'Taste of Guyana',                                 adult: 0, youth: 0 },
@@ -37,7 +42,8 @@ const EVENTS = {
     'rgm-games-night':               { name: "Members' Regular General Meeting & Games Night",  adult: 0, youth: 0 },
     'volunteer-appreciation-dinner': { name: 'Volunteer Appreciation Dinner',                   adult: 0, youth: 0 },
     'agm-election':                  { name: 'Annual General Meeting & Election',               adult: 0, youth: 0 },
-    'independence-gala':             { name: 'Independence Dinner & Dance Gala',                adult: 0, youth: 0 }
+    'independence-gala':             { name: 'Independence Dinner & Dance Gala',                adult: 0, youth: 0 },
+    'special-general-meeting':       { name: 'Special General Meeting',                         adult: 0, youth: 0 }
 };
 
 const toCents = (dollars) => Math.round(Number(dollars) * 100);
@@ -54,40 +60,6 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
 
     try {
-        /* ---------------------------------------------------------------
-           Donations
-           --------------------------------------------------------------- */
-        if (body.type === 'donation') {
-            const amount = Number(body.amount);
-            if (!Number.isFinite(amount) || amount < MIN_DONATION || amount > MAX_DONATION) {
-                return res.status(400).json({ error: 'Donation must be between $5 and $25,000.' });
-            }
-
-            const monthly = body.frequency === 'monthly';
-
-            const session = await stripe.checkout.sessions.create({
-                mode: monthly ? 'subscription' : 'payment',
-                line_items: [{
-                    quantity: 1,
-                    price_data: {
-                        currency: CURRENCY,
-                        unit_amount: toCents(amount),
-                        product_data: {
-                            name: monthly ? 'Monthly donation to GCCA Calgary' : 'Donation to GCCA Calgary',
-                            description: 'Supporting Guyanese cultural programming in Calgary.'
-                        },
-                        ...(monthly ? { recurring: { interval: 'month' } } : {})
-                    }
-                }],
-                billing_address_collection: 'auto',
-                success_url: `${site}/index.html?donation=success`,
-                cancel_url:  `${site}/index.html?donation=cancelled#donate`,
-                metadata: { kind: 'donation', frequency: monthly ? 'monthly' : 'one-time' }
-            });
-
-            return res.status(200).json({ url: session.url });
-        }
-
         /* ---------------------------------------------------------------
            Event tickets
            --------------------------------------------------------------- */
@@ -116,7 +88,7 @@ module.exports = async function handler(req, res) {
                     price_data: {
                         currency: CURRENCY,
                         unit_amount: toCents(event.youth),
-                        product_data: { name: `${event.name} — youth admission (6–17)` }
+                        product_data: { name: `${event.name} — child admission (2–17)` }
                     }
                 });
             }
@@ -147,7 +119,7 @@ module.exports = async function handler(req, res) {
 
         return res.status(400).json({ error: 'Unrecognised checkout type.' });
     } catch (error) {
-        console.error('[stripe] checkout session failed:', error);
+        console.error('[checkout] session failed:', error);
         return res.status(500).json({ error: 'Could not start checkout.' });
     }
 };
