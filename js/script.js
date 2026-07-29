@@ -15,27 +15,37 @@ const CONFIG = {
     api: {
         contact:      '',   // e.g. '/api/contact'
         newsletter:   '',   // e.g. '/api/newsletter'  (Mailchimp proxy)
-        registration: '',   // e.g. '/api/register'    (free RSVPs land here)
-        checkout:     ''    // e.g. '/api/create-checkout-session'  (Stripe)
+        registration: '',   // e.g. '/api/register'    (event RSVPs land here)
+        membership:   '',   // e.g. '/api/membership'  (membership applications)
+        checkout:     ''    // e.g. '/api/create-checkout-session'
     },
 
     /* ---------------------------------------------------------------------
-       2. Stripe. Two ways to take money:
+       2. Taking payment for tickets.
 
-          A) Checkout Sessions (recommended) — set api.checkout above and
-             deploy api/create-checkout-session.js. Handles custom amounts,
-             monthly giving, and ticket quantities.
+          The association has no payment processor connected yet. Until one
+          is, leave api.checkout and paymentLinks empty: paid events collect
+          the registration and tell the person the executive will be in touch
+          about payment. Nothing is charged and no card details are handled.
 
-          B) Payment Links (fastest) — create links in the Stripe dashboard
-             and paste them here. Used automatically if api.checkout is empty.
+          When a processor is chosen, either set api.checkout to a Checkout
+          Session endpoint, or paste one hosted payment link per event slug
+          below (the slug must match events-data.js).
        --------------------------------------------------------------------- */
-    stripe: {
+    payments: {
         paymentLinks: {
-            donateOneTime: '',        // https://buy.stripe.com/...
-            donateMonthly: '',        // https://buy.stripe.com/...
-            'independence': '',       // ticket link per paid event
-            'culture-night': ''
+            'carifest': ''
         }
+    },
+
+    /* ---------------------------------------------------------------------
+       3. Optional external links.
+          survey — a Google Form / SurveyMonkey URL for community feedback.
+          Leave it empty and the "Tell us how we are doing" button drops
+          people into the contact form with the feedback topic pre-selected.
+       --------------------------------------------------------------------- */
+    links: {
+        survey: ''
     },
 
     currency: 'CAD',
@@ -258,7 +268,7 @@ function initContactForms() {
                 setStatus(status, 'Thanks — your message is on its way. Someone from the executive will reply soon.', 'success');
             } catch (error) {
                 console.error(error);
-                setStatus(status, 'That didn\'t go through. Please try again, or email info@gccacalgary.ca directly.', 'error');
+                setStatus(status, 'That didn\'t go through. Please try again, or email gccacalgary@gmail.com directly.', 'error');
             } finally {
                 submit && submit.removeAttribute('disabled');
             }
@@ -309,7 +319,9 @@ function initNewsletter() {
 }
 
 /* ==========================================================================
-   Stripe checkout
+   Checkout — only used once a payment processor is configured.
+   Returns false when there is nothing to hand off to, so the caller can fall
+   back to recording the registration and settling up offline.
    ========================================================================== */
 async function startCheckout(payload, status) {
     // Path A — your own Checkout Session endpoint.
@@ -324,12 +336,12 @@ async function startCheckout(payload, status) {
             throw new Error('No checkout URL returned');
         } catch (error) {
             console.error(error);
-            setStatus(status, 'Checkout couldn\'t start. Please try again, or email info@gccacalgary.ca.', 'error');
+            setStatus(status, 'Checkout couldn\'t start. Please try again, or email gccacalgary@gmail.com.', 'error');
             return false;
         }
     }
 
-    // Path B — a plain Stripe Payment Link.
+    // Path B — a hosted payment link for this event.
     const link = payload.paymentLink;
     if (link) {
         setStatus(status, 'Opening secure checkout…', 'working');
@@ -337,87 +349,118 @@ async function startCheckout(payload, status) {
         return true;
     }
 
-    console.info('[GCCA] Checkout payload:', payload);
-    setStatus(status, 'Stripe isn\'t connected yet. Add CONFIG.api.checkout or a payment link in script.js.', 'notice');
+    // No processor configured — the caller records the registration instead.
     return false;
 }
 
 /* ==========================================================================
-   Donations
+   Membership applications
    ========================================================================== */
-function initDonations() {
-    const donateBtn = $('#donateBtn');
-    if (!donateBtn) return;
+function initMembership() {
+    const form = $('#membershipForm');
+    if (!form) return;
 
-    const freqButtons   = $$('[data-frequency]');
-    const amountButtons = $$('.amount-btn');
-    const custom        = $('#customAmount');
-    const totalEl       = $('#donateTotal');
-    const labelEl       = $('#donateLabel');
-    const btnLabel      = $('#donateBtnLabel');
-    const status        = $('#donateStatus');
+    const category  = $('#memberCategory');
+    const feeEl     = $('#memberFee');
+    const feeLabel  = $('#memberFeeLabel');
+    const btnLabel  = $('#memberBtnLabel');
+    const submitBtn = $('#memberBtn');
+    const status    = $('[data-status]', form);
 
-    const state = { frequency: 'one-time', amount: 50 };
+    clearErrorOnInput(form);
+
+    function selectedFee() {
+        const option = category.selectedOptions[0];
+        return option && category.value ? Number(option.dataset.fee || 0) : null;
+    }
 
     function render() {
-        const monthly = state.frequency === 'monthly';
-        const valid = state.amount >= 5;
-
-        totalEl.textContent = valid ? money(state.amount) + (monthly ? '/mo' : '') : '—';
-        labelEl.textContent = monthly ? 'Your monthly gift' : 'Your one-time gift';
-        btnLabel.textContent = valid
-            ? (monthly ? 'Give ' + money(state.amount) + ' monthly' : 'Donate ' + money(state.amount))
-            : 'Choose an amount';
-
-        donateBtn.toggleAttribute('disabled', !valid);
-    }
-
-    freqButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.frequency = btn.dataset.frequency;
-            freqButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-            setStatus(status, '');
-            render();
-        });
-    });
-
-    amountButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.amount = Number(btn.dataset.amount);
-            amountButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-            if (custom) custom.value = '';
-            setStatus(status, '');
-            render();
-        });
-    });
-
-    if (custom) {
-        custom.addEventListener('input', () => {
-            const value = Number(custom.value);
-            amountButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
-            state.amount = value > 0 ? value : 0;
-            render();
-        });
-    }
-
-    donateBtn.addEventListener('click', () => {
-        if (state.amount < 5) {
-            setStatus(status, 'Donations start at $5.', 'error');
+        const fee = selectedFee();
+        if (fee === null) {
+            feeLabel.textContent = 'Yearly membership fee';
+            feeEl.textContent = '—';
+            btnLabel.textContent = 'Apply for membership';
             return;
         }
-        const monthly = state.frequency === 'monthly';
-        startCheckout({
-            type: 'donation',
-            frequency: state.frequency,
-            amount: state.amount,
+        feeLabel.textContent = 'Yearly membership fee';
+        feeEl.textContent = money(fee);
+        btnLabel.textContent = 'Apply — ' + money(fee) + ' a year';
+    }
+
+    category.addEventListener('change', () => { setStatus(status, ''); render(); });
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!validateForm(form)) return;
+
+        const option = category.selectedOptions[0];
+        const payload = Object.assign(formData(form), {
+            type: 'membership',
+            categoryLabel: option ? option.textContent.trim() : '',
+            fee: selectedFee(),
             currency: CONFIG.currency,
-            paymentLink: monthly ? CONFIG.stripe.paymentLinks.donateMonthly : CONFIG.stripe.paymentLinks.donateOneTime,
-            successUrl: window.location.origin + window.location.pathname + '?donation=success',
-            cancelUrl:  window.location.origin + window.location.pathname + '?donation=cancelled#donate'
-        }, status);
+            submittedAt: new Date().toISOString()
+        });
+
+        if (!CONFIG.api.membership) {
+            console.info('[GCCA] Membership application:', payload);
+            setStatus(status, NOT_WIRED + 'membership — your application was logged to the console instead.', 'notice');
+            return;
+        }
+
+        submitBtn && submitBtn.setAttribute('disabled', 'true');
+        setStatus(status, 'Sending your application…', 'working');
+
+        try {
+            await postJSON(CONFIG.api.membership, payload);
+            form.reset();
+            render();
+            setStatus(status, 'Thank you — your application is in. The treasurer will confirm your membership and how to pay.', 'success');
+        } catch (error) {
+            console.error(error);
+            setStatus(status, 'We couldn\'t send that. Please try again, or email gccacalgary@gmail.com.', 'error');
+        } finally {
+            submitBtn && submitBtn.removeAttribute('disabled');
+        }
     });
 
     render();
+}
+
+/* ==========================================================================
+   "Tell us how we are doing" — jumps to the contact form with the feedback
+   topic pre-selected, or straight out to a survey if one is configured.
+   ========================================================================== */
+function initFeedbackButton() {
+    const buttons = $$('[data-feedback-btn]');
+    if (!buttons.length) return;
+
+    const survey = (CONFIG.links && CONFIG.links.survey) || '';
+
+    buttons.forEach(btn => {
+        if (survey) {
+            btn.href = survey;
+            btn.target = '_blank';
+            btn.rel = 'noopener';
+            return;
+        }
+
+        btn.addEventListener('click', (event) => {
+            const form = $('#contactForm') || $('#contactFormAbout');
+            if (!form) return;
+            event.preventDefault();
+
+            const topic = $('select[name="topic"]', form);
+            if (topic) {
+                const match = $$('option', topic).find(o => /feedback/i.test(o.textContent));
+                if (match) topic.value = match.value || match.textContent;
+            }
+
+            form.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            const message = $('textarea[name="message"]', form);
+            window.setTimeout(() => message && message.focus({ preventScroll: true }), 450);
+        });
+    });
 }
 
 /* ==========================================================================
@@ -439,19 +482,23 @@ function eventPricing(ev) {
 }
 
 // An event stays "upcoming" until the end of its last day.
+// Meetings called as needed (onCall) never expire and never appear as past.
 function hasPassed(ev) {
+    if (ev.onCall) return false;
     const last = parseDay(ev.endsOn || ev.date);
     last.setHours(23, 59, 59, 999);
     return last < new Date();
 }
 
 function shortDate(ev) {
+    if (ev.onCall) return 'date TBA';
     const date = parseDay(ev.date);
     const month = date.toLocaleDateString('en-CA', { month: 'short' });
     return ev.dateTbd ? month + ' TBD' : month + ' ' + date.getDate();
 }
 
 function longDate(ev) {
+    if (ev.onCall) return 'Called as required · date to be announced';
     const date = parseDay(ev.date);
     if (ev.dateTbd) {
         return date.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }) + ' · date to be confirmed';
@@ -562,8 +609,13 @@ function initEvents() {
     const byDateAsc  = (a, b) => parseDay(a.date) - parseDay(b.date);
     const byDateDesc = (a, b) => parseDay(b.date) - parseDay(a.date);
 
-    const upcoming = all.filter(ev => !hasPassed(ev)).sort(byDateAsc);
-    const past     = all.filter(hasPassed).sort(byDateDesc);
+    // Meetings called as needed sit outside the calendar — they are offered in
+    // the registration dropdown but never take up a card on the schedule.
+    const onCall    = all.filter(ev => ev.onCall);
+    const scheduled = all.filter(ev => !ev.onCall);
+
+    const upcoming = scheduled.filter(ev => !hasPassed(ev)).sort(byDateAsc);
+    const past     = scheduled.filter(hasPassed).sort(byDateDesc);
 
     // Home page — the next three.
     const preview = document.getElementById('eventPreview');
@@ -609,7 +661,7 @@ function initEvents() {
             }
         }
 
-        populateEventSelect(upcoming);
+        populateEventSelect(upcoming.concat(onCall));
         injectEventSchema(upcoming);
     }
 }
@@ -746,20 +798,22 @@ function initRegistration() {
             youth: order.youth,
             total: order.total,
             currency: CONFIG.currency,
-            paymentLink: CONFIG.stripe.paymentLinks[order.slug] || '',
+            paymentLink: CONFIG.payments.paymentLinks[order.slug] || '',
             successUrl: window.location.origin + window.location.pathname + '?registration=success',
             cancelUrl:  window.location.origin + window.location.pathname + '?registration=cancelled#register'
         });
 
-        // Paid event → straight to Stripe.
+        // Paid event → hand off to the payment processor, if one is set up.
         if (order.pricing === 'paid' && order.total > 0) {
             submitBtn && submitBtn.setAttribute('disabled', 'true');
             const started = await startCheckout(payload, status);
-            if (!started) submitBtn && submitBtn.removeAttribute('disabled');
-            return;
+            submitBtn && submitBtn.removeAttribute('disabled');
+            if (started) return;
+            // Nothing configured yet — fall through and record the registration
+            // so the executive can follow up about payment.
         }
 
-        // Free event, or one whose price isn't set yet → just record the RSVP.
+        // Free event, price not announced, or paid-but-offline → record the RSVP.
         if (!CONFIG.api.registration) {
             console.info('[GCCA] Registration payload:', payload);
             setStatus(status, NOT_WIRED + 'registration — your RSVP was logged to the console instead.', 'notice');
@@ -773,12 +827,17 @@ function initRegistration() {
             await postJSON(CONFIG.api.registration, payload);
             form.reset();
             render();
-            setStatus(status, order.pricing === 'tba'
-                ? 'Noted — we\'ll email you as soon as tickets go on sale.'
-                : 'You\'re registered. Check your email for confirmation — see you there.', 'success');
+            let message = 'You\'re registered. Check your email for confirmation — see you there.';
+            if (order.pricing === 'tba') {
+                message = 'Noted — we\'ll email you as soon as tickets go on sale.';
+            } else if (order.pricing === 'paid') {
+                message = 'You\'re registered. The executive will be in touch to confirm your spot and how to pay '
+                    + money(order.total) + '.';
+            }
+            setStatus(status, message, 'success');
         } catch (error) {
             console.error(error);
-            setStatus(status, 'We couldn\'t save that. Please try again, or email info@gccacalgary.ca.', 'error');
+            setStatus(status, 'We couldn\'t save that. Please try again, or email gccacalgary@gmail.com.', 'error');
         } finally {
             submitBtn && submitBtn.removeAttribute('disabled');
         }
@@ -788,15 +847,12 @@ function initRegistration() {
 }
 
 /* ==========================================================================
-   Messages after returning from Stripe
+   Messages after returning from a hosted checkout
    ========================================================================== */
 function initReturnMessages() {
     const params = new URLSearchParams(window.location.search);
 
     const cases = [
-        { key: 'donation',     target: '#donateStatus',
-            success: 'Thank you. Your donation went through — a receipt is on its way to your email.',
-            cancelled: 'No charge was made. Your donation is still here whenever you\'re ready.' },
         { key: 'registration', target: '#registrationForm [data-status]',
             success: 'You\'re registered and paid. Confirmation and tickets are in your email.',
             cancelled: 'Checkout was cancelled and nothing was charged. Your details are still filled in.' }
@@ -878,7 +934,8 @@ function init() {
     initImageFallbacks();
     initContactForms();
     initNewsletter();
-    initDonations();
+    initMembership();
+    initFeedbackButton();
     initRegistration();
     initTabs();
     initReturnMessages();
