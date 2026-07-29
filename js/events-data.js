@@ -14,10 +14,14 @@
      dateTbd     true when the day isn't confirmed — the badge shows "TBD"
                  and the event stays listed for the whole month.
      endsOn      Last day it counts as upcoming. Defaults to `date`.
+     onCall      true for meetings that are called as needed rather than
+                 scheduled (e.g. a Special General Meeting). These stay off
+                 the calendar but remain selectable in the registration form.
      adult/youth Ticket price in CAD:
                    null → price not announced yet (people register interest)
                    0    → free, RSVP only
-                   25   → $25 a ticket, checks out through Stripe
+                   25   → $25 a ticket
+                 `youth` is the child rate (2–17). Under 2 always free.
    ========================================================================== */
 
 window.GCCA_EVENTS = [
@@ -25,8 +29,8 @@ window.GCCA_EVENTS = [
         slug: 'stampede-golf-bbq',
         title: 'Stampede Golf & BBQ',
         venue: 'Golf Fanatics',
-        address: '',
-        time: '',
+        address: '7100 15 St SE, Calgary, AB T2H 2Z8',
+        time: 'Tee time 10:00am · Lunch 12:00pm',
         date: '2026-07-18',
         blurb: 'Fire up your swing and your appetite. Golf and BBQ lunch is the perfect combo.',
         image: 'images/event-golf-bbq.jpg',
@@ -37,13 +41,13 @@ window.GCCA_EVENTS = [
         slug: 'carifest',
         title: 'Carifest',
         venue: 'Cowboys Park',
-        address: '',
-        time: 'Morning',
+        address: '1220 9 Ave SW, Calgary, AB T3C 0J2',
+        time: 'Parade 12:30pm – 2:30pm',
         date: '2026-08-15',
-        blurb: 'Join the GCCA parade for a fun morning of Caribbean rhythm and food.',
+        blurb: 'Join the GCCA parade for an afternoon of Caribbean rhythm and food. Prices are for a parade costume.',
         image: 'images/event-carifest.jpg',
-        adult: 0,
-        youth: 0
+        adult: 50,
+        youth: 30
     },
     {
         slug: 'rgm-september',
@@ -63,8 +67,8 @@ window.GCCA_EVENTS = [
         slug: 'caribbean-sports-day',
         title: 'Caribbean Sports Day',
         venue: 'Rotary Challenger Park',
-        address: '',
-        time: '',
+        address: '3688 48 Ave NE, Calgary, AB T3J 5C8',
+        time: '9:00am – 5:00pm',
         date: '2026-09-12',
         blurb: 'Participate in one or more of the sports: football, basketball, cricket, dominoes, track & field.',
         image: 'images/event-sports-day.jpg',
@@ -87,7 +91,7 @@ window.GCCA_EVENTS = [
         slug: 'family-christmas-party',
         title: 'Family Christmas Party',
         venue: 'SVG Hall',
-        address: '',
+        address: '2110 41 Ave NE, Calgary, AB T2E 8Z7',
         time: '2:00pm',
         date: '2026-12-06',
         blurb: 'Come out for a magical afternoon with the family.',
@@ -156,5 +160,21 @@ window.GCCA_EVENTS = [
         image: 'images/event-independence-gala.jpg',
         adult: null,
         youth: null
+    },
+    {
+        /* Called as needed rather than scheduled — stays off the calendar,
+           but members can still register for it. Give it a `date` and remove
+           `onCall` when one is actually called. */
+        slug: 'special-general-meeting',
+        title: 'Special General Meeting',
+        venue: 'Venue to be confirmed',
+        address: '',
+        time: '',
+        date: '',
+        onCall: true,
+        blurb: 'Called when a matter needs the membership to decide before the next regular meeting.',
+        image: 'images/event-general-meeting.jpg',
+        adult: 0,
+        youth: 0
     }
 ];
