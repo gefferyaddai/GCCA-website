@@ -22,6 +22,8 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
-    "stripe": "^22.3.2"
+    "cli": "^1.0.1",
+    "stripe": "^22.3.2",
+    "vercel": "^58.4.4"
   }
 }
