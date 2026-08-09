@@ -112,7 +112,7 @@
         <div>
           <span class="eyebrow">June 2026 – May 2027 season</span>
           <h2 class="section-title" style="margin-bottom:.2em">Upcoming Events</h2>
-          <p class="section-intro" style="margin-bottom:0">All events are open to the public. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
+          <p class="section-intro" style="margin-bottom:0">Everyone is welcome at our events, apart from the few marked <b>(Members only)</b>. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
         </div>
         <a class="link-arrow" href="#register">Register now
           <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
@@ -210,16 +210,62 @@
                 </div>
               </div>
 
+              <!-- Meetings that offer a meal. Shown only when the chosen event
+                   has a `meal` price in events-data.js; hidden otherwise. -->
+              <fieldset class="choice-set field--full" id="mealField" hidden>
+                <legend class="fieldset__legend">Will you be eating with us?</legend>
+                <div class="choice-set__options">
+                  <label class="check">
+                    <input type="radio" name="meal" value="no" checked>
+                    <span>Meeting only — free</span>
+                  </label>
+                  <label class="check">
+                    <input type="radio" name="meal" value="yes">
+                    <span>Meeting with meal — <b data-meal-price>$5</b> per person</span>
+                  </label>
+                </div>
+              </fieldset>
+
               <div class="field field--full">
                 <label for="regNotes">Anything we should know? <span class="field__hint">(optional)</span></label>
                 <textarea id="regNotes" name="notes" style="min-height:96px" placeholder="Dietary needs, accessibility requirements, or how many little ones you're bringing."></textarea>
               </div>
+
+              <!-- TODO: swap these for the executive's final list of volunteer
+                   roles when Lorlene sends it. Editing the labels and values
+                   here is all that's needed — nothing else refers to them. -->
+              <fieldset class="choice-set field--full">
+                <legend class="fieldset__legend">Would you like to help out? <span class="field__hint">(optional — tick anything that appeals)</span></legend>
+                <div class="choice-set__options choice-set__options--split">
+                  <label class="check"><input type="checkbox" name="volunteer" value="setup"><span>Set-up and take-down</span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="kitchen"><span>Food and kitchen</span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="welcome"><span>Welcome desk and registration</span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="children"><span>Children's activities</span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="photography"><span>Photography</span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="fundraising"><span>Fundraising and sponsorship</span></label>
+                </div>
+              </fieldset>
 
               <div class="field field--full">
                 <label class="check">
                   <input type="checkbox" name="photoConsent" value="yes">
                   <span>I understand photos and video are taken at GCCA events and may be shared on our social channels.</span>
                 </label>
+              </div>
+
+              <div class="field field--full">
+                <label class="check">
+                  <input type="checkbox" id="regTerms" name="acceptsPolicy" value="yes" required>
+                  <span>I have read and agree to the <a href="policy.html" target="_blank" rel="noopener">cancellation &amp; refund policy</a>. <span class="req" aria-hidden="true">*</span></span>
+                </label>
+                <p class="field__error" data-error-for="regTerms"></p>
+              </div>
+
+              <div class="field field--full signature">
+                <label for="regSignature">Digital signature <span class="req" aria-hidden="true">*</span></label>
+                <input type="text" id="regSignature" name="signature" autocomplete="off" placeholder="Type your full name" required>
+                <p class="field__error" data-error-for="regSignature"></p>
+                <p class="signature__note">Typing your name here has the same effect as signing this form by hand. Dated <b data-signature-date>today</b>.</p>
               </div>
             </div>
             <p class="form-status" data-status role="status" aria-live="polite"></p>
@@ -232,6 +278,7 @@
           <ul class="order-lines" id="orderLines">
             <li><span>Adult tickets</span><b data-line="adults">—</b></li>
             <li><span>Child tickets</span><b data-line="youth">—</b></li>
+            <li data-line-row="meal" hidden><span>Meals</span><b data-line="meal">—</b></li>
           </ul>
           <p class="order-total">
             <span id="orderTotalLabel">Total</span>
@@ -245,8 +292,7 @@
             <svg aria-hidden="true"><use href="#i-lock"/></svg>
             Your details go straight to the executive and are never shared outside the association.
           </p>
-          <!-- TODO: replace the note below with the refund / cancellation policy once the executive has agreed one. -->
-          <p class="form-footnote" style="margin-top:12px">Need to cancel or change a booking? Email <a href="mailto:gccacalgary@gmail.com">gccacalgary@gmail.com</a> and we'll sort it out.</p>
+          <p class="form-footnote" style="margin-top:12px">Need to cancel or change a booking? Read the <a href="policy.html">cancellation &amp; refund policy</a>, then email <a href="mailto:gccacalgary@gmail.com">gccacalgary@gmail.com</a> and we'll sort it out.</p>
         </aside>
       </div>
     </div>
@@ -312,6 +358,7 @@
           <li><a href="events.html#register">Register for an event</a></li>
           <li><a href="about.html#team">Executive team</a></li>
           <li><a href="about.html#governance">Our by-laws</a></li>
+          <li><a href="policy.html">Cancellation &amp; refunds</a></li>
           <li><a href="about.html#contact">Volunteer with us</a></li>
         </ul>
       </div>

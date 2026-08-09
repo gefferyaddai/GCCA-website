@@ -978,6 +978,36 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     accent-color: var(--green-700);
 }
 
+/* Grouped choices — the meal option, the volunteer roles. The options sit in
+   their own wrapper rather than on the fieldset, because a legend is not a
+   reliable flex or grid child. */
+.choice-set {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+.choice-set legend { padding: 0; margin-bottom: 11px; }
+.choice-set__options { display: grid; gap: 11px; }
+.choice-set__options--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 620px) {
+    .choice-set__options--split { grid-template-columns: 1fr; }
+}
+
+.signature input { font-family: var(--font-display); font-size: 1.15rem; }
+.signature__note {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--ink-faint);
+    line-height: 1.5;
+}
+
+.membership-year {
+    margin: 0 0 1.4rem;
+    font-size: .86rem;
+    color: var(--ink-soft);
+}
+
 .form-status {
     margin-top: 18px;
     padding: 0;
@@ -1891,4 +1921,66 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     border-radius: 0 var(--radius) var(--radius) 0;
     font-size: .9rem;
     color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   32. Policy pages — cancellation and refunds
+   Long-form terms people actually have to read, so the column is kept narrow
+   and each rule sits in its own panel rather than running together as prose.
+   -------------------------------------------------------------------------- */
+.policy { max-width: 74ch; }
+.policy__updated {
+    font-size: .84rem;
+    color: var(--ink-faint);
+    margin-bottom: 2.6rem;
+}
+
+.policy-block {
+    padding: clamp(24px, 3vw, 34px);
+    margin-bottom: 22px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--gold);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+.policy-block h2 { font-size: 1.42rem; margin-bottom: .6rem; }
+.policy-block h3 {
+    font-size: 1.02rem;
+    margin: 1.6rem 0 .5rem;
+    color: var(--green-800);
+}
+.policy-block h3:first-of-type { margin-top: 1.3rem; }
+.policy-block p { font-size: .97rem; color: var(--ink-soft); }
+.policy-block p:last-child { margin-bottom: 0; }
+.policy-block .fact-list { margin-top: 1rem; }
+.policy-block .fact-list b { color: var(--ink); }
+
+/* The refund windows, so the timing is scannable rather than buried in a
+   sentence. Collapses to stacked rows on a phone. */
+.refund-rule {
+    display: grid;
+    grid-template-columns: minmax(0, 40%) 1fr;
+    gap: 6px 20px;
+    margin: 1rem 0 0;
+}
+.refund-rule dt {
+    font-weight: 700;
+    font-size: .95rem;
+    color: var(--green-800);
+}
+.refund-rule dd {
+    margin: 0;
+    font-size: .95rem;
+    color: var(--ink-soft);
+}
+.refund-rule dt, .refund-rule dd {
+    padding: 12px 0;
+    border-top: 1px solid var(--line);
+}
+
+@media (max-width: 620px) {
+    .refund-rule { grid-template-columns: 1fr; gap: 0; }
+    .refund-rule dt { padding-bottom: 2px; border-bottom: 0; }
+    .refund-rule dd { padding-top: 0; border-top: 0; padding-bottom: 12px; }
 }

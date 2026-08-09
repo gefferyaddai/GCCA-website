@@ -19,6 +19,11 @@
      onCall      true for meetings that are called as needed rather than
                  scheduled (e.g. a Special General Meeting). These stay off
                  the calendar but remain selectable in the registration form.
+     membersOnly true when the event is open to members only. The title then
+                 reads "… (Members only)" on the card and in the dropdown.
+     meal        Price of the optional meal at a meeting, in CAD. The form then
+                 offers "Meeting only (free)" or "Meeting with meal ($5)".
+                 Leave it off for events where a meal isn't offered separately.
      adult/youth Ticket price in CAD:
                    null → price not announced yet (people register interest)
                    0    → free, RSVP only
@@ -63,7 +68,8 @@ window.GCCA_EVENTS = [
         blurb: 'Your voice shapes the future. Show up and be part of the decision making.',
         image: 'assets/event-general-meeting.jpg',
         adult: 0,
-        youth: 0
+        youth: 0,
+        meal: 5
     },
     {
         slug: 'caribbean-sports-day',
@@ -98,6 +104,7 @@ window.GCCA_EVENTS = [
         date: '2026-12-06',
         blurb: 'Come out for a magical afternoon with the family.',
         image: 'assets/event-christmas-party.jpg',
+        membersOnly: true,
         adult: null,
         youth: null
     },
@@ -110,6 +117,7 @@ window.GCCA_EVENTS = [
         date: '2027-01-29',
         blurb: 'Roll in for strikes, stay for slices. Bowling and pizza night starts with YOU.',
         image: 'assets/event-bowling.jpg',
+        membersOnly: true,
         adult: null,
         youth: null
     },
@@ -125,7 +133,8 @@ window.GCCA_EVENTS = [
         blurb: 'Come out and be part of the decision making.',
         image: 'assets/event-games-night.jpg',
         adult: 0,
-        youth: 0
+        youth: 0,
+        meal: 5
     },
     {
         slug: 'volunteer-appreciation-dinner',
@@ -149,7 +158,8 @@ window.GCCA_EVENTS = [
         blurb: 'Your voice shapes the future. Come out and vote.',
         image: 'assets/event-agm.jpg',
         adult: 0,
-        youth: 0
+        youth: 0,
+        meal: 5
     },
     {
         slug: 'independence-gala',
@@ -177,6 +187,7 @@ window.GCCA_EVENTS = [
         blurb: 'Called when a matter needs the membership to decide before the next regular meeting.',
         image: 'assets/event-general-meeting.jpg',
         adult: 0,
-        youth: 0
+        youth: 0,
+        meal: 5
     }
 ];

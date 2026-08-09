@@ -70,6 +70,22 @@ function setStatus(el, message, state) {
     else el.removeAttribute('data-state');
 }
 
+/* The membership year runs 1 May to 30 April. An application sent in, say,
+   February belongs to the year that began the previous May — so the treasurer
+   sees which year every payment covers without having to work it out. */
+function membershipYear(today) {
+    const now = today || new Date();
+    const startYear = now.getMonth() >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+    return {
+        label: '1 May ' + startYear + ' – 30 April ' + (startYear + 1),
+        short: startYear + '/' + String(startYear + 1).slice(2),
+        start: startYear + '-05-01',
+        end:   (startYear + 1) + '-04-30'
+    };
+}
+
+const longDay = (date) => date.toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+
 /* ==========================================================================
    Header, navigation, footer year
    ========================================================================== */
@@ -191,7 +207,11 @@ function validateForm(form) {
         let message = '';
         const value = (field.value || '').trim();
 
-        if (!value) {
+        // A required tick-box carries its value whether or not it is ticked,
+        // so it has to be checked for `checked`, not for a value.
+        if (field.type === 'checkbox') {
+            message = field.checked ? '' : 'Please tick this box to continue.';
+        } else if (!value) {
             message = field.tagName === 'SELECT' ? 'Please choose an option.' : 'This field is required.';
         } else if (field.type === 'email' && !EMAIL_RE.test(value)) {
             message = 'Enter a valid email address, like name@example.com.';
@@ -219,7 +239,15 @@ function clearErrorOnInput(form) {
 
 function formData(form) {
     const data = {};
-    new FormData(form).forEach((value, key) => { data[key] = value; });
+    new FormData(form).forEach((value, key) => {
+        // Tick-box groups (volunteering) send one entry per box ticked. Collect
+        // them into a list instead of letting the last one overwrite the rest.
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            data[key] = [].concat(data[key], value);
+        } else {
+            data[key] = value;
+        }
+    });
     return data;
 }
 
@@ -367,6 +395,9 @@ function initMembership() {
     const submitBtn = $('#memberBtn');
     const status    = $('[data-status]', form);
 
+    const year = membershipYear();
+    $$('[data-membership-year]').forEach(el => { el.textContent = year.label; });
+
     clearErrorOnInput(form);
 
     function selectedFee() {
@@ -398,6 +429,9 @@ function initMembership() {
             type: 'membership',
             categoryLabel: option ? option.textContent.trim() : '',
             fee: selectedFee(),
+            membershipYear: year.label,
+            membershipYearStart: year.start,
+            membershipYearEnd: year.end,
             currency: CONFIG.currency,
             submittedAt: new Date().toISOString()
         });
@@ -508,6 +542,10 @@ function longDate(ev) {
 
 const CTA_LABEL = { paid: 'Get tickets', free: 'Reserve a spot', tba: 'Register your interest' };
 
+// Events restricted to members carry the note in their name, so it travels with
+// the title everywhere it is shown — card, dropdown, and registration summary.
+const eventTitle = (ev) => ev.title + (ev.membersOnly ? ' (Members only)' : '');
+
 function eventTag(ev, past) {
     if (past) return '<span class="tag tag--muted">Held</span>';
     const pricing = eventPricing(ev);
@@ -546,7 +584,7 @@ function eventCardHTML(ev, options) {
         '</div>' +
         '<div class="event-card__body">' +
         eventTag(ev, past) +
-        '<h3 class="event-card__title" style="margin-top:.6rem">' + esc(ev.title) + '</h3>' +
+        '<h3 class="event-card__title" style="margin-top:.6rem">' + esc(eventTitle(ev)) + '</h3>' +
         '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-calendar"/></svg> ' + esc(when) + '</p>' +
         (where ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-pin"/></svg> ' + esc(where) + '</p>' : '') +
         '<p class="event-card__text">' + esc(ev.blurb) + '</p>' +
@@ -561,14 +599,20 @@ function populateEventSelect(upcoming) {
 
     const options = upcoming.map(ev => {
         const pricing = eventPricing(ev);
-        const suffix = pricing === 'free' ? ' (free)' : (pricing === 'tba' ? ' (price to come)' : '');
+        let suffix = '';
+        if (pricing === 'free') {
+            suffix = ev.meal > 0 ? ' (free, meal ' + money(ev.meal) + ')' : ' (free)';
+        } else if (pricing === 'tba') {
+            suffix = ' (price to come)';
+        }
         return '<option value="' + esc(ev.slug) + '"' +
             ' data-pricing="' + pricing + '"' +
             ' data-adult="' + (Number(ev.adult) || 0) + '"' +
             ' data-youth="' + (Number(ev.youth) || 0) + '"' +
-            ' data-name="' + esc(ev.title) + '"' +
+            ' data-meal="' + (Number(ev.meal) || 0) + '"' +
+            ' data-name="' + esc(eventTitle(ev)) + '"' +
             ' data-date="' + esc(shortDate(ev)) + '">' +
-            esc(ev.title + ' — ' + shortDate(ev) + suffix) + '</option>';
+            esc(eventTitle(ev) + ' — ' + shortDate(ev) + suffix) + '</option>';
     }).join('');
 
     select.innerHTML = '<option value="">Choose an event</option>' + options;
@@ -669,6 +713,12 @@ function initEvents() {
 /* ==========================================================================
    Event registration and ticketing
    ========================================================================== */
+
+/* Meals at general meetings are charged for everyone sitting down to eat,
+   children included. If the executive decides it should be one flat charge
+   per household instead, change this to `() => 1` — nothing else moves. */
+const mealCount = (adults, youth) => adults + youth;
+
 function initRegistration() {
     const form = $('#registrationForm');
     if (!form) return;
@@ -682,6 +732,15 @@ function initRegistration() {
     const btnLabel  = $('#registerBtnLabel');
     const status    = $('[data-status]', form);
     const submitBtn = $('#registerBtn');
+
+    const mealField = $('#mealField');
+    const mealPriceEl = $('[data-meal-price]', form);
+    const mealLineRow = $('[data-line-row="meal"]');
+    const nameField = $('#regName');
+    const signature = $('#regSignature');
+
+    // The signature is dated the day it is typed.
+    $$('[data-signature-date]', form).forEach(el => { el.textContent = longDay(new Date()); });
 
     clearErrorOnInput(form);
 
@@ -699,15 +758,21 @@ function initRegistration() {
         const pricing = option && select.value ? (option.dataset.pricing || 'free') : '';
         const adultPrice = option ? Number(option.dataset.adult || 0) : 0;
         const youthPrice = option ? Number(option.dataset.youth || 0) : 0;
+        const mealPrice  = option ? Number(option.dataset.meal || 0) : 0;
         const adults = clampQty(adultQty);
         const youth  = clampQty(youthQty);
+
+        const mealChoice = $('input[name="meal"]:checked', form);
+        const wantsMeal = mealPrice > 0 && !!mealChoice && mealChoice.value === 'yes';
+        const meals = wantsMeal ? mealCount(adults, youth) : 0;
 
         return {
             slug: select.value,
             name: option ? (option.dataset.name || '') : '',
             date: option ? (option.dataset.date || '') : '',
             pricing, adults, youth, adultPrice, youthPrice,
-            total: adults * adultPrice + youth * youthPrice
+            mealPrice, wantsMeal, meals,
+            total: adults * adultPrice + youth * youthPrice + meals * mealPrice
         };
     }
 
@@ -715,6 +780,23 @@ function initRegistration() {
         const order = currentOrder();
         const lineAdults = $('[data-line="adults"]');
         const lineYouth  = $('[data-line="youth"]');
+        const lineMeal   = $('[data-line="meal"]');
+
+        // The meal choice only belongs on screen for events that offer one.
+        if (mealField) {
+            mealField.hidden = !(order.mealPrice > 0);
+            if (mealField.hidden) {
+                const off = $('input[name="meal"][value="no"]', form);
+                if (off) off.checked = true;
+            } else if (mealPriceEl) {
+                mealPriceEl.textContent = money(order.mealPrice);
+            }
+        }
+        if (mealLineRow) mealLineRow.hidden = !order.wantsMeal;
+        if (lineMeal && order.wantsMeal) {
+            lineMeal.textContent = order.meals + ' × ' + money(order.mealPrice)
+                + ' = ' + money(order.meals * order.mealPrice);
+        }
 
         if (!order.slug) {
             orderEvent.textContent = 'No event selected yet.';
@@ -737,7 +819,8 @@ function initRegistration() {
             ? order.youth + ' × ' + money(order.youthPrice) + ' = ' + money(order.youth * order.youthPrice)
             : order.youth + ' attending';
 
-        if (order.pricing === 'free') {
+        // A free meeting stops being free once meals are added to it.
+        if (order.pricing === 'free' && order.total === 0) {
             totalLabel.textContent = 'This event is free';
             totalEl.textContent = 'Free';
             btnLabel.textContent = 'Confirm your RSVP';
@@ -754,6 +837,7 @@ function initRegistration() {
 
     select.addEventListener('change', () => { setStatus(status, ''); render(); });
     [adultQty, youthQty].forEach(input => input.addEventListener('input', render));
+    $$('input[name="meal"]', form).forEach(input => input.addEventListener('change', render));
 
     $$('.qty button').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -790,21 +874,36 @@ function initRegistration() {
             return;
         }
 
+        // A signature that isn't the registrant's name isn't a signature. Names
+        // are compared loosely — case and spacing shouldn't trip anyone up.
+        const tidy = (value) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+        if (signature && nameField && tidy(signature.value) !== tidy(nameField.value)) {
+            fieldError(form, signature, 'Please type your name exactly as you entered it above.');
+            signature.focus();
+            signature.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            return;
+        }
+
         const payload = Object.assign(formData(form), {
             type: 'registration',
             eventSlug: order.slug,
             eventName: order.name,
             adults: order.adults,
             youth: order.youth,
+            meals: order.meals,
+            mealPrice: order.mealPrice,
+            mealTotal: order.meals * order.mealPrice,
             total: order.total,
+            signedAt: new Date().toISOString(),
             currency: CONFIG.currency,
             paymentLink: CONFIG.payments.paymentLinks[order.slug] || '',
             successUrl: window.location.origin + window.location.pathname + '?registration=success',
             cancelUrl:  window.location.origin + window.location.pathname + '?registration=cancelled#register'
         });
 
-        // Paid event → hand off to the payment processor, if one is set up.
-        if (order.pricing === 'paid' && order.total > 0) {
+        // Anything with money on it — tickets, or a free meeting with meals
+        // added — hands off to the payment processor, if one is set up.
+        if (order.total > 0) {
             submitBtn && submitBtn.setAttribute('disabled', 'true');
             const started = await startCheckout(payload, status);
             submitBtn && submitBtn.removeAttribute('disabled');
@@ -830,7 +929,7 @@ function initRegistration() {
             let message = 'You\'re registered. Check your email for confirmation — see you there.';
             if (order.pricing === 'tba') {
                 message = 'Noted — we\'ll email you as soon as tickets go on sale.';
-            } else if (order.pricing === 'paid') {
+            } else if (order.total > 0) {
                 message = 'You\'re registered. The executive will be in touch to confirm your spot and how to pay '
                     + money(order.total) + '.';
             }

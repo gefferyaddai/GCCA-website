@@ -31,19 +31,20 @@ const CURRENCY = 'cad';
 // Ticket prices live here, on the server, so nobody can edit them in the browser.
 // Keep the slugs and the numbers identical to events-data.js.
 // 0 means free, or price not announced yet — those never reach the processor.
+// `meal` is the optional meal at a meeting, charged per person sitting down.
 const EVENTS = {
     'stampede-golf-bbq':             { name: 'Stampede Golf & BBQ',                             adult: 0, youth: 0 },
     'carifest':                      { name: 'Carifest (parade costume)',                       adult: 50, youth: 30 },
-    'rgm-september':                 { name: "Members' Regular General Meeting",                adult: 0, youth: 0 },
+    'rgm-september':                 { name: "Members' Regular General Meeting",                adult: 0, youth: 0, meal: 5 },
     'caribbean-sports-day':          { name: 'Caribbean Sports Day',                            adult: 0, youth: 0 },
     'taste-of-guyana':               { name: 'Taste of Guyana',                                 adult: 0, youth: 0 },
     'family-christmas-party':        { name: 'Family Christmas Party',                          adult: 0, youth: 0 },
     'bowling-pizza-party':           { name: 'Bowling & Pizza Party',                           adult: 0, youth: 0 },
-    'rgm-games-night':               { name: "Members' Regular General Meeting & Games Night",  adult: 0, youth: 0 },
+    'rgm-games-night':               { name: "Members' Regular General Meeting & Games Night",  adult: 0, youth: 0, meal: 5 },
     'volunteer-appreciation-dinner': { name: 'Volunteer Appreciation Dinner',                   adult: 0, youth: 0 },
-    'agm-election':                  { name: 'Annual General Meeting & Election',               adult: 0, youth: 0 },
+    'agm-election':                  { name: 'Annual General Meeting & Election',               adult: 0, youth: 0, meal: 5 },
     'independence-gala':             { name: 'Independence Dinner & Dance Gala',                adult: 0, youth: 0 },
-    'special-general-meeting':       { name: 'Special General Meeting',                         adult: 0, youth: 0 }
+    'special-general-meeting':       { name: 'Special General Meeting',                         adult: 0, youth: 0, meal: 5 }
 };
 
 const toCents = (dollars) => Math.round(Number(dollars) * 100);
@@ -93,6 +94,20 @@ module.exports = async function handler(req, res) {
                 });
             }
 
+            // Meals at meetings: the browser says how many are eating, the
+            // price comes from here so it can't be tampered with.
+            const meals = Math.max(0, Math.min(40, Math.round(Number(body.meals) || 0)));
+            if (meals > 0 && event.meal > 0) {
+                line_items.push({
+                    quantity: meals,
+                    price_data: {
+                        currency: CURRENCY,
+                        unit_amount: toCents(event.meal),
+                        product_data: { name: `${event.name} — meal` }
+                    }
+                });
+            }
+
             if (!line_items.length) {
                 return res.status(400).json({ error: 'This event is free — no payment needed.' });
             }
@@ -110,6 +125,9 @@ module.exports = async function handler(req, res) {
                     attendee: (body.name || '').slice(0, 120),
                     adults: String(adults),
                     youth: String(youth),
+                    meals: String(meals),
+                    signature: (body.signature || '').slice(0, 120),
+                    volunteer: [].concat(body.volunteer || []).join(', ').slice(0, 200),
                     notes: (body.notes || '').slice(0, 400)
                 }
             });
