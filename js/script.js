@@ -4,20 +4,32 @@
    Everything the site needs, in one file. Start by filling in CONFIG below.
    ========================================================================== */
 
+/* The deployed Google Apps Script web app that receives every form on the site.
+   Paste the /exec URL between the quotes and all four forms start working.
+   Leave it empty and each form says so rather than silently losing anything.
+
+   Deploying it: apps-script/README.md
+   Changing it at handover: DEPLOY.md in the repo root. */
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyDE7PqiIvhyrD3Q7WaD06l3WU9yNr-C1CATnZpe0jz9HUeUVJUvZ2LrZRQWE1y68Jk/exec';
+
 const CONFIG = {
     /* ---------------------------------------------------------------------
        1. Where forms post to. Leave a value empty and that form will tell you
           it isn't connected yet instead of silently swallowing submissions.
 
-          Options for each: your own endpoint (e.g. "/api/contact" on Vercel),
-          a Formspree URL, or a Google Apps Script web app URL.
+          All four form endpoints are the SAME Google Apps Script web app —
+          it routes on the `type` field in the payload and writes each kind to
+          its own tab. See apps-script/README.md for how to deploy it and get
+          the URL, which ends in /exec.
+
+          Paste it into SHEET_ENDPOINT below and every form comes alive at once.
        --------------------------------------------------------------------- */
     api: {
-        contact:      '',   // e.g. '/api/contact'
-        newsletter:   '',   // e.g. '/api/newsletter'  (Mailchimp proxy)
-        registration: '',   // e.g. '/api/register'    (event RSVPs land here)
-        membership:   '',   // e.g. '/api/membership'  (membership applications)
-        checkout:     ''    // e.g. '/api/create-checkout-session'
+        contact:      SHEET_ENDPOINT,
+        newsletter:   SHEET_ENDPOINT,
+        registration: SHEET_ENDPOINT,
+        membership:   SHEET_ENDPOINT,
+        checkout:     ''    // Square — wired up in a later stage
     },
 
     /* ---------------------------------------------------------------------
@@ -252,13 +264,28 @@ function formData(form) {
 }
 
 async function postJSON(url, payload) {
+    /* Cross-origin posts go out as text/plain. It looks wrong — the body is
+       JSON either way — but any other content type makes the browser send a
+       CORS preflight, and a Google Apps Script web app cannot answer one. The
+       request would fail before it ever reached the sheet. Our own /api routes
+       are same-origin, so they keep the honest content type. */
+    const sameOrigin = url.charAt(0) === '/';
+    const headers = sameOrigin
+        ? { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        : { 'Content-Type': 'text/plain;charset=utf-8' };
+
     const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload)
     });
     if (!response.ok) throw new Error('Request failed with status ' + response.status);
-    return response.json().catch(() => ({}));
+
+    const result = await response.json().catch(() => ({}));
+    /* Apps Script answers 200 even when it could not save the row, so the
+       failure is in the body rather than the status code. */
+    if (result && result.ok === false) throw new Error(result.error || 'The server rejected that.');
+    return result;
 }
 
 const NOT_WIRED = 'This form isn\'t connected to an inbox yet. Add the endpoint in script.js → CONFIG.api.';
@@ -277,6 +304,7 @@ function initContactForms() {
 
             const submit = $('button[type="submit"]', form);
             const payload = Object.assign(formData(form), {
+                type: 'contact',
                 source: document.title,
                 submittedAt: new Date().toISOString()
             });
@@ -333,7 +361,9 @@ function initNewsletter() {
             setStatus(status, 'Adding you to the list…', 'working');
 
             try {
-                await postJSON(CONFIG.api.newsletter, { email, source: document.title });
+                await postJSON(CONFIG.api.newsletter, {
+                    type: 'newsletter', email, source: document.title
+                });
                 form.reset();
                 setStatus(status, 'You\'re on the list. See you at the next celebration.', 'success');
             } catch (error) {
@@ -610,6 +640,8 @@ function populateEventSelect(upcoming) {
             ' data-adult="' + (Number(ev.adult) || 0) + '"' +
             ' data-youth="' + (Number(ev.youth) || 0) + '"' +
             ' data-meal="' + (Number(ev.meal) || 0) + '"' +
+            ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
+            ' data-iso="' + esc(ev.date || '') + '"' +
             ' data-name="' + esc(eventTitle(ev)) + '"' +
             ' data-date="' + esc(shortDate(ev)) + '">' +
             esc(eventTitle(ev) + ' — ' + shortDate(ev) + suffix) + '</option>';
@@ -719,6 +751,15 @@ function initEvents() {
    per household instead, change this to `() => 1` — nothing else moves. */
 const mealCount = (adults, youth) => adults + youth;
 
+/* Which cancellation terms apply, in the words of the policy page. Shown on the
+   registration form so nobody agrees to a refund window they never saw. */
+const REFUND_TERMS = {
+    standard: 'Standard event: full refund if you cancel 7 or more days before, '
+        + 'no refund within 48 hours of the event.',
+    special: 'Special event: full refund 14 or more days before, 50% from 7 to 13 days, '
+        + 'no refund within 7 days of the event.'
+};
+
 function initRegistration() {
     const form = $('#registrationForm');
     if (!form) return;
@@ -736,6 +777,7 @@ function initRegistration() {
     const mealField = $('#mealField');
     const mealPriceEl = $('[data-meal-price]', form);
     const mealLineRow = $('[data-line-row="meal"]');
+    const refundTerms = $('[data-refund-terms]');
     const nameField = $('#regName');
     const signature = $('#regSignature');
 
@@ -759,6 +801,7 @@ function initRegistration() {
         const adultPrice = option ? Number(option.dataset.adult || 0) : 0;
         const youthPrice = option ? Number(option.dataset.youth || 0) : 0;
         const mealPrice  = option ? Number(option.dataset.meal || 0) : 0;
+        const tier = option && select.value ? (option.dataset.tier || 'standard') : '';
         const adults = clampQty(adultQty);
         const youth  = clampQty(youthQty);
 
@@ -770,7 +813,8 @@ function initRegistration() {
             slug: select.value,
             name: option ? (option.dataset.name || '') : '',
             date: option ? (option.dataset.date || '') : '',
-            pricing, adults, youth, adultPrice, youthPrice,
+            iso:  option ? (option.dataset.iso || '') : '',
+            pricing, adults, youth, adultPrice, youthPrice, tier,
             mealPrice, wantsMeal, meals,
             total: adults * adultPrice + youth * youthPrice + meals * mealPrice
         };
@@ -792,6 +836,12 @@ function initRegistration() {
                 mealPriceEl.textContent = money(order.mealPrice);
             }
         }
+        // Which refund window this booking falls under.
+        if (refundTerms) {
+            refundTerms.textContent = REFUND_TERMS[order.tier] || '';
+            refundTerms.hidden = !order.tier;
+        }
+
         if (mealLineRow) mealLineRow.hidden = !order.wantsMeal;
         if (lineMeal && order.wantsMeal) {
             lineMeal.textContent = order.meals + ' × ' + money(order.mealPrice)
@@ -888,11 +938,14 @@ function initRegistration() {
             type: 'registration',
             eventSlug: order.slug,
             eventName: order.name,
+            eventDate: order.date,
+            eventDateISO: order.iso,
             adults: order.adults,
             youth: order.youth,
             meals: order.meals,
             mealPrice: order.mealPrice,
             mealTotal: order.meals * order.mealPrice,
+            refundTier: order.tier,
             total: order.total,
             signedAt: new Date().toISOString(),
             currency: CONFIG.currency,
@@ -1024,6 +1077,26 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   "Download as PDF" on long documents — the browser's own print dialog, where
+   "Save as PDF" is a destination. No file to keep in sync, and it picks up the
+   print styles in the stylesheet.
+   ========================================================================== */
+function initPrintButtons() {
+    const buttons = $$('[data-print]');
+    if (!buttons.length) return;
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => window.print());
+    });
+
+    // Arriving from a "Download as PDF" link elsewhere on the site — open the
+    // dialog straight away, once the fonts and layout have settled.
+    if (new URLSearchParams(window.location.search).get('print') === '1') {
+        window.setTimeout(() => window.print(), 700);
+    }
+}
+
+/* ==========================================================================
    Boot
    ========================================================================== */
 function init() {
@@ -1038,6 +1111,7 @@ function init() {
     initRegistration();
     initTabs();
     initReturnMessages();
+    initPrintButtons();
 }
 
 if (document.readyState === 'loading') {

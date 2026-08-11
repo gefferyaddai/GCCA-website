@@ -1008,6 +1008,17 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     color: var(--ink-soft);
 }
 
+/* Which refund window the selected event falls under. */
+.refund-terms {
+    margin: 14px 0 0;
+    padding: 11px 14px;
+    background: var(--gold-100);
+    border-radius: var(--radius);
+    font-size: .82rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+}
+
 .form-status {
     margin-top: 18px;
     padding: 0;
@@ -1812,6 +1823,7 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .gov-card h3 { font-size: 1.4rem; margin: 1.1rem 0 .55rem; }
 .gov-card p { font-size: .95rem; color: var(--ink-soft); }
 .gov-card .btn { margin-top: 1.2rem; }
+.gov-card__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .gov-card__note {
     margin-top: 1rem;
     font-size: .84rem;
@@ -1921,6 +1933,178 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     border-radius: 0 var(--radius) var(--radius) 0;
     font-size: .9rem;
     color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   33. Long documents — the by-laws
+   A legal document, so the numbering has to be visible and correct: (a), (b)
+   for clauses and (i), (ii) for sub-clauses, matching how the articles are
+   cross-referenced in the text itself.
+   -------------------------------------------------------------------------- */
+.doc-head { max-width: 62ch; margin-bottom: clamp(32px, 4vw, 52px); }
+.doc-head__meta {
+    margin: 1rem 0 0;
+    font-size: .86rem;
+    color: var(--ink-faint);
+}
+.doc-head__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 1.8rem;
+}
+
+.doc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+    gap: clamp(28px, 4vw, 60px);
+    align-items: start;
+}
+
+.doc-toc {
+    position: sticky;
+    top: 96px;
+    padding: 22px 24px 24px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+}
+.doc-toc__title {
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--green-700);
+    margin-bottom: .9rem;
+}
+.doc-toc__list {
+    margin: 0;
+    padding-left: 1.4em;
+    display: grid;
+    gap: 7px;
+    font-size: .88rem;
+}
+.doc-toc__list li::marker { color: var(--gold-600); font-weight: 600; }
+.doc-toc__list a { text-decoration: none; color: var(--ink-soft); }
+.doc-toc__list a:hover { color: var(--green-700); text-decoration: underline; }
+.doc-toc__foot {
+    margin: 1.1rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+    font-size: .88rem;
+}
+.doc-toc__foot a { text-decoration: none; }
+.doc-toc__foot a:hover { text-decoration: underline; }
+
+.doc-body { max-width: 78ch; }
+.doc-body__foot {
+    margin-top: 2.6rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    font-size: .92rem;
+    color: var(--ink-soft);
+}
+
+.bylaw { margin-bottom: clamp(34px, 4vw, 52px); scroll-margin-top: 96px; }
+.bylaw h2 {
+    font-size: clamp(1.3rem, 2vw, 1.6rem);
+    margin-bottom: 1rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--gold-200);
+}
+.bylaw__num {
+    display: block;
+    font-family: var(--font-body);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold-600);
+    margin-bottom: .35rem;
+}
+.bylaw h3 { font-size: 1.05rem; margin: 1.6rem 0 .6rem; color: var(--green-800); }
+.bylaw p { font-size: .95rem; color: var(--ink-soft); }
+
+.bylaw ol.alpha, .bylaw ol.roman {
+    margin: 0;
+    padding-left: 1.9em;
+    display: grid;
+    gap: 12px;
+}
+.bylaw ol.alpha { list-style-type: lower-alpha; }
+.bylaw ol.roman { list-style-type: lower-roman; }
+.bylaw ol li {
+    font-size: .95rem;
+    color: var(--ink-soft);
+    line-height: 1.62;
+    padding-left: .3em;
+}
+.bylaw ol li::marker { color: var(--green-700); font-weight: 600; }
+/* Nested lists get breathing room from the clause that introduces them. */
+.bylaw ol ol, .bylaw .bylaw__plain, .bylaw .bylaw__defs { margin-top: 12px; }
+.bylaw ol p { margin: .6rem 0 0; }
+.bylaw b { color: var(--ink); }
+
+.bylaw__plain {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+    display: grid;
+    gap: 5px;
+    font-size: .95rem;
+    color: var(--ink-soft);
+}
+.bylaw__plain li { padding-left: 1em; border-left: 2px solid var(--gold-200); }
+
+.bylaw__defs { margin-bottom: 0; display: grid; gap: 4px; }
+.bylaw__defs dt { font-weight: 700; color: var(--ink); font-size: .93rem; }
+.bylaw__defs dd {
+    margin: 0 0 .7rem;
+    font-size: .93rem;
+    color: var(--ink-soft);
+}
+
+.bylaw__note {
+    margin: .8rem 0 0;
+    padding: 10px 14px;
+    background: var(--gold-100);
+    border-radius: var(--radius);
+    font-size: .86rem;
+    color: var(--ink-soft);
+}
+.bylaw__meta { font-size: .88rem; color: var(--ink-faint); }
+.bylaw__quote {
+    margin: .9rem 0;
+    padding: 14px 18px;
+    background: var(--paper);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+.bylaw__quote p { margin: 0; font-size: .94rem; }
+
+.bylaw--amendment {
+    padding: clamp(22px, 3vw, 32px);
+    background: var(--cream-2);
+    border: 1px solid var(--gold-200);
+    border-radius: var(--radius-lg);
+}
+.bylaw--amendment h2 { border-bottom-color: var(--gold); }
+
+@media (max-width: 900px) {
+    .doc-layout { grid-template-columns: 1fr; }
+    .doc-toc { position: static; }
+}
+
+/* Printing the by-laws is how the "Download as PDF" button works, so the
+   document itself has to survive without the site around it. */
+@media print {
+    .doc-toc, .doc-head__actions, .doc-body__foot { display: none !important; }
+    .doc-layout { display: block; }
+    .doc-body { max-width: none; }
+    .bylaw { break-inside: auto; margin-bottom: 26px; }
+    .bylaw h2 { break-after: avoid; }
+    .bylaw ol li { break-inside: avoid; }
+    .bylaw--amendment { background: none; border: 1px solid #999; }
 }
 
 /* --------------------------------------------------------------------------

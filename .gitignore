@@ -4,3 +4,8 @@
 node_modules
 dist
 .cache
+
+# Square keys and anything else secret — never commit these
+.env
+.env.*
+.vercel

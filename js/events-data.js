@@ -24,6 +24,11 @@
      meal        Price of the optional meal at a meeting, in CAD. The form then
                  offers "Meeting only (free)" or "Meeting with meal ($5)".
                  Leave it off for events where a meal isn't offered separately.
+     special     true for galas, tournaments, catered and ticketed events —
+                 the ones with pre-paid vendors and fixed costs. These get the
+                 longer refund windows (14 / 7 days) from the cancellation
+                 policy. Leave it off and the event is treated as standard
+                 (7 days / 48 hours). See policy.html.
      adult/youth Ticket price in CAD:
                    null → price not announced yet (people register interest)
                    0    → free, RSVP only
@@ -54,7 +59,8 @@ window.GCCA_EVENTS = [
         blurb: 'Join the GCCA parade for an afternoon of Caribbean rhythm and food. Prices are for a parade costume.',
         image: 'assets/event-carifest.jpg',
         adult: 50,
-        youth: 30
+        youth: 30,
+        special: true
     },
     {
         slug: 'rgm-september',
@@ -93,7 +99,8 @@ window.GCCA_EVENTS = [
         blurb: 'Treat your buds to a taste of Guyanese cuisine.',
         image: 'assets/event-taste-of-guyana.jpg',
         adult: null,
-        youth: null
+        youth: null,
+        special: true
     },
     {
         slug: 'family-christmas-party',
@@ -105,6 +112,7 @@ window.GCCA_EVENTS = [
         blurb: 'Come out for a magical afternoon with the family.',
         image: 'assets/event-christmas-party.jpg',
         membersOnly: true,
+        special: true,
         adult: null,
         youth: null
     },
@@ -171,7 +179,8 @@ window.GCCA_EVENTS = [
         blurb: "Celebrating another year of Guyana's independence.",
         image: 'assets/event-independence-gala.jpg',
         adult: null,
-        youth: null
+        youth: null,
+        special: true
     },
     {
         /* Called as needed rather than scheduled — stays off the calendar,
