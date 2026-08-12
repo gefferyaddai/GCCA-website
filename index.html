@@ -13,7 +13,9 @@
   <meta property="og:image" content="assets/hero-community.jpg">
   <meta property="og:locale" content="en_CA">
 
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
@@ -335,12 +337,60 @@
                 <label for="memberHousehold">Who is on this membership? <span class="field__hint">(optional)</span></label>
                 <textarea id="memberHousehold" name="household" style="min-height:96px" placeholder="For family and senior-couple memberships, list the names of everyone included."></textarea>
               </div>
+
+              <!-- Volunteering. Optional by design — some members would rather
+                   not be asked, and the consent line is what makes the tick
+                   itself permission to make contact. -->
+              <fieldset class="choice-set field--full">
+                <legend class="fieldset__legend">Would you like to volunteer? <span class="field__hint">(optional)</span></legend>
+                <p class="choice-set__intro">Please indicate which event or events you would like to volunteer for. By checking the box, you agree to be contacted.</p>
+                <div class="choice-set__options choice-set__options--split">
+                  <label class="check"><input type="checkbox" name="volunteer" value="independence"><span>Independence Dinner and Dance <span class="check__when">usually May</span></span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="golf"><span>Stampede Golf <span class="check__when">usually July</span></span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="taste-of-guyana"><span>Taste of Guyana <span class="check__when">usually October</span></span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="christmas"><span>Family Christmas Party <span class="check__when">usually December</span></span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="casino"><span>Casino <span class="check__when">any time of year</span></span></label>
+                  <label class="check"><input type="checkbox" name="volunteer" value="other"><span>Other — Carifest, Sports Day <span class="check__when">usually summer</span></span></label>
+                </div>
+              </fieldset>
             </div>
 
             <p class="fee-summary">
               <span id="memberFeeLabel">Yearly membership fee</span>
               <strong id="memberFee">—</strong>
             </p>
+
+            <!-- The association's membership terms, in the executive's wording.
+                 One tick covers all eight, which is why they are listed in full
+                 rather than hidden behind a link. -->
+            <div class="terms">
+              <h4 class="terms__title">Membership terms</h4>
+              <ul class="terms__list">
+                <li>I understand that GCCA membership runs from May 1 to April 30 each year.</li>
+                <li>I understand that membership is not active until payment is received.</li>
+                <li>I understand that membership fees are non-refundable.</li>
+                <li>I agree to conduct myself respectfully at all GCCA events, meetings, and online spaces.</li>
+                <li>I understand that misconduct may result in suspension or termination of membership.</li>
+                <li>I consent to receive official GCCA communications (including meeting notices and updates) via email.</li>
+                <li>I understand that my personal information will be used only for GCCA administrative purposes and will not be shared outside the organisation except as required by law.</li>
+                <li>I agree to abide by the <a href="bylaws.html">GCCA By-laws</a> and all rules governing membership, voting, conduct, and participation.</li>
+              </ul>
+            </div>
+
+            <div class="field field--full">
+              <label class="check">
+                <input type="checkbox" id="memberTerms" name="acceptsTerms" value="yes" required>
+                <span>I have read and agree to the membership terms above. <span class="req" aria-hidden="true">*</span></span>
+              </label>
+              <p class="field__error" data-error-for="memberTerms"></p>
+            </div>
+
+            <div class="field field--full signature">
+              <label for="memberSignature">Digital signature <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id="memberSignature" name="signature" autocomplete="off" placeholder="Type your full name" required>
+              <p class="field__error" data-error-for="memberSignature"></p>
+              <p class="signature__note">Typing your name here has the same effect as signing this form by hand. Dated <b data-signature-date>today</b>.</p>
+            </div>
 
             <button class="btn btn--primary btn--block btn--lg" type="submit" id="memberBtn">
               <span id="memberBtnLabel">Apply for membership</span>
