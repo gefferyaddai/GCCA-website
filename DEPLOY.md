@@ -85,6 +85,11 @@ to Microsoft 365 addresses, all of those change together.
 - [ ] `SITE_URL` environment variable updated
 - [ ] Redirect from the Vercel URL to the domain
 - [ ] Email addresses across the site updated if M365 has landed
+- [ ] Share previews checked once live — paste a page URL into Facebook's
+      Sharing Debugger. `og:image`, `og:url` and `sitemap.xml` are already
+      written against `https://gccacalgary.ca`, so they only start resolving
+      when the domain does. **If a different domain is ever chosen, all six
+      pages plus `sitemap.xml` and `robots.txt` need updating.**
 
 ---
 
