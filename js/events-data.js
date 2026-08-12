@@ -47,8 +47,11 @@ window.GCCA_EVENTS = [
         venue: 'Golf Fanatics',
         address: '7100 15 St SE, Calgary, AB T2H 2Z8',
         time: 'Tee time 10:00am · Lunch 12:00pm',
-        date: '2027-07-24',
-        tentative: true,
+        /* Next one is tentatively Saturday 24 July 2027. When it is confirmed,
+           change the date below to '2027-07-24' and the event moves from the
+           past archive back onto the schedule. Add `tentative: true` alongside
+           it if the day still is not locked in. */
+        date: '2026-07-18',
         blurb: 'Fire up your swing and your appetite. Golf and BBQ lunch is the perfect combo.',
         image: 'assets/event-golf-bbq.jpg',
         adult: null,
