@@ -580,7 +580,8 @@ function shortDate(ev) {
     if (ev.onCall) return 'date TBA';
     const date = parseDay(ev.date);
     const month = date.toLocaleDateString('en-CA', { month: 'short' });
-    return ev.dateTbd ? month + ' TBD' : month + ' ' + date.getDate();
+    if (ev.dateTbd) return month + ' TBD';
+    return month + ' ' + date.getDate() + (ev.tentative ? '?' : '');
 }
 
 function longDate(ev) {
@@ -589,7 +590,11 @@ function longDate(ev) {
     if (ev.dateTbd) {
         return date.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' }) + ' · date to be confirmed';
     }
-    return date.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const full = date.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    /* A date the executive has picked but not yet locked in. Different from
+       dateTbd, where there is no day to show at all — here we show the day and
+       say plainly that it could still move. */
+    return full + (ev.tentative ? ' · tentative' : '');
 }
 
 const CTA_LABEL = { paid: 'Get tickets', free: 'Reserve a spot', tba: 'Register your interest' };

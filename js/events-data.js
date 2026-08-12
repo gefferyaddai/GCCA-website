@@ -15,6 +15,10 @@
      date        'YYYY-MM-DD'. Used for ordering and for the date badge.
      dateTbd     true when the day isn't confirmed — the badge shows "TBD"
                  and the event stays listed for the whole month.
+     tentative   true when a specific day has been chosen but not locked in.
+                 The date is shown in full and marked "· tentative". Use this
+                 rather than dateTbd when there IS a date to tell people about.
+                 Remove the flag once the date is confirmed.
      endsOn      Last day it counts as upcoming. Defaults to `date`.
      onCall      true for meetings that are called as needed rather than
                  scheduled (e.g. a Special General Meeting). These stay off
@@ -43,7 +47,8 @@ window.GCCA_EVENTS = [
         venue: 'Golf Fanatics',
         address: '7100 15 St SE, Calgary, AB T2H 2Z8',
         time: 'Tee time 10:00am · Lunch 12:00pm',
-        date: '2026-07-18',
+        date: '2027-07-24',
+        tentative: true,
         blurb: 'Fire up your swing and your appetite. Golf and BBQ lunch is the perfect combo.',
         image: 'assets/event-golf-bbq.jpg',
         adult: null,
