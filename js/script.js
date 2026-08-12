@@ -240,6 +240,21 @@ function validateForm(form) {
     return !firstBad;
 }
 
+/* A signature that isn't the person's own name isn't a signature. Compared
+   loosely — case and extra spacing shouldn't trip anybody up. Used by both the
+   membership application and the event registration. */
+function signatureIsValid(form, signature, nameField) {
+    if (!signature || !nameField) return true;
+
+    const tidy = (value) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    if (tidy(signature.value) === tidy(nameField.value)) return true;
+
+    fieldError(form, signature, 'Please type your name exactly as you entered it above.');
+    signature.focus();
+    signature.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return false;
+}
+
 function clearErrorOnInput(form) {
     form.addEventListener('input', (e) => {
         const field = e.target;
@@ -425,8 +440,12 @@ function initMembership() {
     const submitBtn = $('#memberBtn');
     const status    = $('[data-status]', form);
 
+    const nameField = $('#memberName');
+    const signature = $('#memberSignature');
+
     const year = membershipYear();
     $$('[data-membership-year]').forEach(el => { el.textContent = year.label; });
+    $$('[data-signature-date]', form).forEach(el => { el.textContent = longDay(new Date()); });
 
     clearErrorOnInput(form);
 
@@ -454,11 +473,14 @@ function initMembership() {
         event.preventDefault();
         if (!validateForm(form)) return;
 
+        if (!signatureIsValid(form, signature, nameField)) return;
+
         const option = category.selectedOptions[0];
         const payload = Object.assign(formData(form), {
             type: 'membership',
             categoryLabel: option ? option.textContent.trim() : '',
             fee: selectedFee(),
+            signedAt: new Date().toISOString(),
             membershipYear: year.label,
             membershipYearStart: year.start,
             membershipYearEnd: year.end,
@@ -924,15 +946,7 @@ function initRegistration() {
             return;
         }
 
-        // A signature that isn't the registrant's name isn't a signature. Names
-        // are compared loosely — case and spacing shouldn't trip anyone up.
-        const tidy = (value) => (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
-        if (signature && nameField && tidy(signature.value) !== tidy(nameField.value)) {
-            fieldError(form, signature, 'Please type your name exactly as you entered it above.');
-            signature.focus();
-            signature.scrollIntoView({ block: 'center', behavior: 'smooth' });
-            return;
-        }
+        if (!signatureIsValid(form, signature, nameField)) return;
 
         const payload = Object.assign(formData(form), {
             type: 'registration',
