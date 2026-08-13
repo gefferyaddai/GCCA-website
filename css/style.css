@@ -607,9 +607,26 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .card-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 /* Event card ------------------------------------------------------------- */
-.event-card { display: grid; grid-template-columns: 40% 1fr; }
-.event-card__media { position: relative; min-height: 210px; }
-.event-card__media img { width: 100%; height: 100%; object-fit: cover; }
+/* The photo sits across the top rather than in a strip down the side. A side
+   strip was only 40% of a ~384px card — a 154px sliver that threw away most of
+   a photo. Full width gives it two and a half times the room, in the landscape
+   shape event photos are actually taken in. It also matches what the card
+   already did on phones, so there is one layout instead of two.
+
+   Nothing expands on hover. Anything that grows a card has to take the space
+   from somewhere, and in a grid that means cards reflowing out from under the
+   cursor as you reach for them. */
+.event-card { display: grid; grid-template-rows: auto 1fr; }
+.event-card__media { position: relative; aspect-ratio: 3 / 2; overflow: hidden; }
+.event-card__media img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .6s var(--ease);
+}
+/* A gentle push in, the same as the culture tiles. Contained by the frame, so
+   it costs no layout. */
+.event-card:hover .event-card__media img { transform: scale(1.05); }
+.event-card--past:hover .event-card__media img { transform: none; }
 .event-card__body { padding: 22px 22px 24px; }
 .event-card__title {
     font-size: 1.3rem;
@@ -635,7 +652,10 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 
 .date-badge {
     position: absolute;
-    top: 16px; right: -22px;
+    /* Sits inside the photo. It used to hang 22px off the right of the old
+       side strip, straddling the join with the text — with a full-width strip
+       that just puts it outside the card, where it gets clipped. */
+    top: 16px; right: 16px;
     width: 62px;
     padding: 8px 4px 9px;
     background: var(--green-800);
@@ -1611,10 +1631,9 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     .split--wide-right { grid-template-columns: 1fr; }
     .order-card { position: static; }
 
+    /* The card already stacks at every width now, so there is nothing to undo
+       here beyond going to a single column. */
     .card-grid--3 { grid-template-columns: 1fr; }
-    .event-card { grid-template-columns: 1fr; }
-    .event-card__media { min-height: 200px; }
-    .date-badge { right: 16px; }
 
     .journey { grid-template-columns: 1fr; gap: 26px; text-align: left; }
     .journey__step { flex-direction: row; align-items: flex-start; gap: 16px; text-align: left; padding: 0; }

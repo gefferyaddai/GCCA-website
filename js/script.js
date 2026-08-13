@@ -636,7 +636,7 @@ function eventCardHTML(ev, options) {
         (ev.dateTbd ? 'TBD' : date.getDate()) + '</span>' +
         '</span>' +
         (ev.image
-            ? '<img src="' + esc(ev.image) + '" alt="' + esc(ev.title) + '" width="600" height="600" loading="lazy">'
+            ? '<img src="' + esc(ev.image) + '" alt="' + esc(ev.title) + '" width="1200" height="800" loading="lazy">'
             : '') +
         '</div>' +
         '<div class="event-card__body">' +

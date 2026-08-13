@@ -12,6 +12,9 @@
                  Keep them matching.
      image       Photo for the card, in /assets. Until the file exists the card
                  shows a labelled placeholder naming the file to drop in.
+                 Save them LANDSCAPE at 3:2 — 1200x800 is what the card
+                 declares, and the slot across the top of the card crops to
+                 3:2, so anything else loses its top and bottom.
      date        'YYYY-MM-DD'. Used for ordering and for the date badge.
      dateTbd     true when the day isn't confirmed — the badge shows "TBD"
                  and the event stays listed for the whole month.
