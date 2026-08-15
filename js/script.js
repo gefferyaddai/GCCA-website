@@ -29,7 +29,9 @@ const CONFIG = {
         newsletter:   SHEET_ENDPOINT,
         registration: SHEET_ENDPOINT,
         membership:   SHEET_ENDPOINT,
-        checkout:     ''    // Square — wired up in a later stage
+        /* Square-hosted payment links. The keys live in Vercel's environment
+           variables, never here — see api/create-checkout-session.js. */
+        checkout:     '/api/create-checkout-session'
     },
 
     /* ---------------------------------------------------------------------
@@ -264,6 +266,69 @@ function clearErrorOnInput(form) {
     });
 }
 
+/* ==========================================================================
+   Confirmation dialog
+
+   Every form ends here on success. An inline line of green text under a long
+   form is easy to miss — especially after scrolling — so a submission that
+   worked says so unmistakably.
+
+   Errors deliberately do NOT come through here. They stay inline next to the
+   field, where the thing needing fixing is.
+
+   Built in JavaScript rather than markup so it exists on every page without
+   repeating it in seven files. Uses a native <dialog>, which brings the focus
+   trap, Escape-to-close and the backdrop with it.
+   ========================================================================== */
+let confirmDialog = null;
+
+function buildConfirmDialog() {
+    const el = document.createElement('dialog');
+    el.className = 'modal';
+    el.setAttribute('aria-labelledby', 'modalTitle');
+    el.innerHTML =
+        '<div class="modal__inner">' +
+        '<span class="modal__tick" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.6 4.6 4.5L19 7"/></svg>' +
+        '</span>' +
+        '<h2 class="modal__title" id="modalTitle"></h2>' +
+        '<p class="modal__text"></p>' +
+        '<dl class="modal__detail"></dl>' +
+        '<button class="btn btn--primary btn--block" type="button" data-modal-close>Done</button>' +
+        '</div>';
+
+    $('[data-modal-close]', el).addEventListener('click', () => el.close());
+    /* Clicking the backdrop closes it too. The backdrop is the dialog itself,
+       so a click that lands on the panel inside must not count. */
+    el.addEventListener('click', (event) => { if (event.target === el) el.close(); });
+
+    document.body.appendChild(el);
+    return el;
+}
+
+/* detail is an optional list of [label, value] pairs — the event and the total,
+   the membership year and fee — so people can check what they just sent. */
+function showConfirmation(title, message, detail) {
+    if (!confirmDialog) confirmDialog = buildConfirmDialog();
+
+    $('.modal__title', confirmDialog).textContent = title;
+    $('.modal__text', confirmDialog).textContent = message;
+
+    const list = $('.modal__detail', confirmDialog);
+    list.innerHTML = (detail || [])
+        .filter(row => row && row[1])
+        .map(row => '<div><dt>' + esc(row[0]) + '</dt><dd>' + esc(row[1]) + '</dd></div>')
+        .join('');
+    list.hidden = !list.children.length;
+
+    /* Older browsers without showModal fall back to the inline status message,
+       which every caller sets anyway. */
+    if (typeof confirmDialog.showModal !== 'function') return false;
+    confirmDialog.showModal();
+    return true;
+}
+
 function formData(form) {
     const data = {};
     new FormData(form).forEach((value, key) => {
@@ -337,6 +402,9 @@ function initContactForms() {
                 await postJSON(CONFIG.api.contact, payload);
                 form.reset();
                 setStatus(status, 'Thanks — your message is on its way. Someone from the executive will reply soon.', 'success');
+                showConfirmation('Message sent',
+                    'Thanks for getting in touch. Someone from the executive will reply soon.',
+                    [['Topic', payload.topic], ['We\'ll reply to', payload.email]]);
             } catch (error) {
                 console.error(error);
                 setStatus(status, 'That didn\'t go through. Please try again, or email gccacalgary@gmail.com directly.', 'error');
@@ -381,6 +449,9 @@ function initNewsletter() {
                 });
                 form.reset();
                 setStatus(status, 'You\'re on the list. See you at the next celebration.', 'success');
+                showConfirmation('You\'re on the list',
+                    'We\'ll email you when there is something worth turning up for.',
+                    [['Address', email]]);
             } catch (error) {
                 console.error(error);
                 setStatus(status, 'We couldn\'t add you just now. Please try again in a moment.', 'error');
@@ -396,34 +467,26 @@ function initNewsletter() {
    Returns false when there is nothing to hand off to, so the caller can fall
    back to recording the registration and settling up offline.
    ========================================================================== */
-async function startCheckout(payload, status) {
-    // Path A — your own Checkout Session endpoint.
-    if (CONFIG.api.checkout) {
-        setStatus(status, 'Opening secure checkout…', 'working');
-        try {
-            const data = await postJSON(CONFIG.api.checkout, payload);
-            if (data && data.url) {
-                window.location.assign(data.url);
-                return true;
-            }
-            throw new Error('No checkout URL returned');
-        } catch (error) {
-            console.error(error);
-            setStatus(status, 'Checkout couldn\'t start. Please try again, or email gccacalgary@gmail.com.', 'error');
-            return false;
-        }
-    }
+/* Asks the server for a Square payment link. Returns { url, orderId, total,
+   fee } or null if there is nothing to pay or checkout could not be started.
 
-    // Path B — a hosted payment link for this event.
-    const link = payload.paymentLink;
-    if (link) {
-        setStatus(status, 'Opening secure checkout…', 'working');
-        window.location.assign(link);
-        return true;
-    }
+   It deliberately does NOT redirect. The caller records the submission first —
+   otherwise a completed payment could leave no trace on this side, and the
+   treasurer would see money arrive in Square with no idea who from. */
+async function createCheckout(payload, status) {
+    if (!CONFIG.api.checkout) return null;
 
-    // No processor configured — the caller records the registration instead.
-    return false;
+    setStatus(status, 'Opening secure checkout…', 'working');
+    try {
+        const data = await postJSON(CONFIG.api.checkout, payload);
+        if (data && data.url) return data;
+        throw new Error('No checkout URL returned');
+    } catch (error) {
+        console.error(error);
+        setStatus(status, 'Checkout couldn\'t start, so we\'ve saved your details instead — '
+            + 'the executive will be in touch about paying.', 'notice');
+        return null;
+    }
 }
 
 /* ==========================================================================
@@ -495,13 +558,39 @@ function initMembership() {
         }
 
         submitBtn && submitBtn.setAttribute('disabled', 'true');
+
+        /* Same order as event registration: get the payment link, save the
+           application with its Square reference, then send them off to pay.
+           An abandoned payment still leaves the treasurer an application. */
+        let checkout = null;
+        if (selectedFee() > 0) {
+            checkout = await createCheckout(payload, status);
+            if (checkout) {
+                payload.squareOrder = checkout.orderId || '';
+                payload.processingFee = checkout.fee || 0;
+                payload.totalCharged = checkout.total;
+            }
+        }
+
         setStatus(status, 'Sending your application…', 'working');
 
         try {
             await postJSON(CONFIG.api.membership, payload);
+
+            if (checkout) {
+                setStatus(status, 'Taking you to secure checkout…', 'working');
+                window.location.assign(checkout.url);
+                return;
+            }
+
             form.reset();
             render();
             setStatus(status, 'Thank you — your application is in. The treasurer will confirm your membership and how to pay.', 'success');
+            showConfirmation('Application received',
+                'Welcome. The treasurer will confirm your membership and how to pay.',
+                [['Category', payload.categoryLabel],
+                 ['Membership year', year.label],
+                 ['Fee', payload.fee ? money(payload.fee) : '']]);
         } catch (error) {
             console.error(error);
             setStatus(status, 'We couldn\'t send that. Please try again, or email gccacalgary@gmail.com.', 'error');
@@ -973,15 +1062,22 @@ function initRegistration() {
             cancelUrl:  window.location.origin + window.location.pathname + '?registration=cancelled#register'
         });
 
-        // Anything with money on it — tickets, or a free meeting with meals
-        // added — hands off to the payment processor, if one is set up.
+        /* Anything with money on it — tickets, or a free meeting with meals
+           added — gets a Square payment link. The link is fetched BEFORE the
+           registration is saved so the Square order reference can be saved
+           with it, and the registration is saved BEFORE anyone is sent off to
+           pay. Do it the other way round and a completed payment can leave no
+           record on this side at all. */
+        let checkout = null;
         if (order.total > 0) {
             submitBtn && submitBtn.setAttribute('disabled', 'true');
-            const started = await startCheckout(payload, status);
+            checkout = await createCheckout(payload, status);
             submitBtn && submitBtn.removeAttribute('disabled');
-            if (started) return;
-            // Nothing configured yet — fall through and record the registration
-            // so the executive can follow up about payment.
+            if (checkout) {
+                payload.squareOrder = checkout.orderId || '';
+                payload.processingFee = checkout.fee || 0;
+                payload.total = checkout.total;      // what they actually pay, fee included
+            }
         }
 
         // Free event, price not announced, or paid-but-offline → record the RSVP.
@@ -996,16 +1092,35 @@ function initRegistration() {
 
         try {
             await postJSON(CONFIG.api.registration, payload);
+
+            /* Saved. Now — and only now — hand them to Square to pay. */
+            if (checkout) {
+                setStatus(status, 'Taking you to secure checkout…', 'working');
+                window.location.assign(checkout.url);
+                return;
+            }
+
             form.reset();
             render();
             let message = 'You\'re registered. Check your email for confirmation — see you there.';
+            let title = 'You\'re registered';
             if (order.pricing === 'tba') {
-                message = 'Noted — we\'ll email you as soon as tickets go on sale.';
+                title = 'Interest registered';
+                message = 'We\'ll email you as soon as tickets go on sale.';
             } else if (order.total > 0) {
-                message = 'You\'re registered. The executive will be in touch to confirm your spot and how to pay '
+                title = 'Registration received';
+                message = 'The executive will be in touch to confirm your spot and how to pay '
                     + money(order.total) + '.';
             }
             setStatus(status, message, 'success');
+            showConfirmation(title, message, [
+                ['Event', order.name],
+                ['Date', order.date],
+                ['Attending', order.adults + ' adult' + (order.adults === 1 ? '' : 's')
+                    + (order.youth ? ', ' + order.youth + ' child' + (order.youth === 1 ? '' : 'ren') : '')],
+                ['Meals', order.meals ? String(order.meals) : ''],
+                ['Total', order.total > 0 ? money(order.total) : 'Free']
+            ]);
         } catch (error) {
             console.error(error);
             setStatus(status, 'We couldn\'t save that. Please try again, or email gccacalgary@gmail.com.', 'error');
@@ -1025,8 +1140,13 @@ function initReturnMessages() {
 
     const cases = [
         { key: 'registration', target: '#registrationForm [data-status]',
-            success: 'You\'re registered and paid. Confirmation and tickets are in your email.',
-            cancelled: 'Checkout was cancelled and nothing was charged. Your details are still filled in.' }
+            title: 'Payment received',
+            success: 'You\'re registered and paid. Square has emailed your receipt.',
+            cancelled: 'Checkout was cancelled and nothing was charged. Your registration is saved, so the executive can still take payment another way.' },
+        { key: 'membership', target: '#membershipForm [data-status]',
+            title: 'Membership paid',
+            success: 'Your membership is paid. Square has emailed your receipt, and the treasurer will confirm shortly.',
+            cancelled: 'Checkout was cancelled and nothing was charged. Your application is saved, so the treasurer can still take payment another way.' }
     ];
 
     cases.forEach(item => {
@@ -1038,6 +1158,13 @@ function initReturnMessages() {
         setStatus(el, value === 'success' ? item.success : item.cancelled,
             value === 'success' ? 'success' : 'notice');
         el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+        /* Coming back from a payment page, a popup is the clearest possible
+           signal that the money went through. A cancellation stays inline —
+           it is not something to celebrate with a dialog. */
+        if (value === 'success') {
+            showConfirmation(item.title, item.success);
+        }
     });
 }
 
@@ -1096,6 +1223,20 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   A long document's table of contents. It is a sidebar on desktop and stays
+   open; on a phone the same list is most of a screen to scroll past, so it
+   starts collapsed. Done here rather than in CSS because a <details> cannot be
+   closed by a stylesheet — only the `open` attribute decides.
+   ========================================================================== */
+function initDocContents() {
+    $$('[data-toc]').forEach(toc => {
+        if (window.matchMedia('(max-width: 900px)').matches) {
+            toc.removeAttribute('open');
+        }
+    });
+}
+
+/* ==========================================================================
    "Download as PDF" on long documents — the browser's own print dialog, where
    "Save as PDF" is a destination. No file to keep in sync, and it picks up the
    print styles in the stylesheet.
@@ -1130,6 +1271,7 @@ function init() {
     initRegistration();
     initTabs();
     initReturnMessages();
+    initDocContents();
     initPrintButtons();
 }
 

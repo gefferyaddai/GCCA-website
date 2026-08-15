@@ -40,7 +40,7 @@ const SPREADSHEETS = {
    opening the /exec URL shows which version is actually deployed — editing the
    file changes nothing until "New version" is pushed, and this is the only way
    to tell the two apart from outside. */
-const VERSION = '2026-08-10a';
+const VERSION = '2026-08-14a';
 
 /* Who gets told when money is owed. Currently the development address —
    one of the values that changes at handover. */
@@ -66,6 +66,10 @@ const EVENT_COLUMNS = [
     ['Payment status',  null],
     ['Payment method',  null],
     ['Paid on',         null],
+    /* Square's reference for the order, so a payment in the Square dashboard
+       can be matched to the person who made it. Blank for cash and cheque. */
+    ['Square order',    'squareOrder'],
+    ['Processing fee',  'processingFee'],
     ['Notes',           'notes'],
     ['Email',           'email'],
     ['Phone',           'phone'],
@@ -90,6 +94,10 @@ const MEMBER_COLUMNS = [
     ['Payment status',  null],
     ['Payment method',  null],
     ['Paid on',         null],
+    /* Square's reference for the order, so a payment in the Square dashboard
+       can be matched to the member. Blank for cash and cheque. */
+    ['Square order',    'squareOrder'],
+    ['Processing fee',  'processingFee'],
     ['Email',           'email'],
     ['Phone',           'phone'],
     ['Household',       'household'],

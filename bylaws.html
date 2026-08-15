@@ -92,8 +92,13 @@
 
       <div class="doc-layout">
 
-        <nav class="doc-toc" aria-labelledby="tocTitle">
-          <h2 class="doc-toc__title" id="tocTitle">Contents</h2>
+        <!-- On a phone the sixteen entries below are most of a screen to scroll
+             past before Article 1 begins, so the list collapses to a single
+             tappable line. It stays open on desktop, where it is a sidebar with
+             room to spare — script.js closes it on small screens at load. -->
+        <nav class="doc-toc" aria-label="Contents">
+          <details class="doc-toc__disclosure" data-toc open>
+          <summary class="doc-toc__title">Contents</summary>
           <ol class="doc-toc__list">
             <li><a href="#article-1">Name</a></li>
             <li><a href="#article-2">Objectives</a></li>
@@ -113,6 +118,7 @@
             <li><a href="#article-16">Dissolution</a></li>
           </ol>
           <p class="doc-toc__foot"><a href="#amendments">Special Resolution &amp; Amendment</a></p>
+          </details>
         </nav>
 
         <div class="doc-body">
