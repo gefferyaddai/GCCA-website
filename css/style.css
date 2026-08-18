@@ -338,20 +338,32 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 /* --------------------------------------------------------------------------
    6. Header & navigation
    -------------------------------------------------------------------------- */
+/* The header used to be var(--cream) — the same value as the page background,
+   so it dissolved into the page. It is now the deep green the footer already
+   uses, which bookends the site in the brand's primary colour rather than
+   introducing a new one. Everything inside it is recoloured below. */
 .site-header {
     position: sticky;
     top: 0;
     z-index: 90;
-    background: var(--cream);
-    border-bottom: 1px solid transparent;
-    transition: box-shadow .3s var(--ease), border-color .3s var(--ease),
-    background .3s var(--ease);
+    background: var(--green-900);
+    transition: box-shadow .3s var(--ease), background .3s var(--ease);
 }
 .site-header.is-stuck {
-    background: rgba(251, 248, 238, .93);
+    background: rgba(10, 58, 38, .94);
     backdrop-filter: blur(9px);
-    border-bottom-color: var(--line);
-    box-shadow: 0 8px 24px rgba(10, 58, 38, .05);
+    box-shadow: 0 10px 30px rgba(10, 58, 38, .22);
+}
+
+/* The same flag stripe that closes the footer, opening the header. Five pixels
+   is enough to read as a deliberate edge rather than a border. */
+.site-header::after {
+    content: "";
+    display: block;
+    height: 4px;
+    background: linear-gradient(to right,
+    var(--red) 0 20%, var(--flag-black) 20% 26%,
+    var(--gold) 26% 62%, #fff 62% 66%, var(--green-600) 66% 100%);
 }
 
 .header__inner {
@@ -398,6 +410,48 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .nav__link[aria-current="page"]::after { transform: scaleX(1); }
 
 .nav__cta { padding: .62em 1.25em; font-size: .9rem; }
+
+/* --------------------------------------------------------------------------
+   Header on deep green — everything that sat on cream needs inverting.
+   Gold rather than white for the active states: white on green is flat, and
+   gold is already the accent the rest of the site uses for emphasis.
+   -------------------------------------------------------------------------- */
+/* The logo is a transparent PNG whose lettering is black, so on a dark bar it
+   collapses into a murky blob. A pale disc behind it gives the artwork the
+   light background it was drawn for, and reads as a deliberate badge. */
+.site-header .brand__mark {
+    background: var(--cream);
+    border-radius: 50%;
+    padding: 4px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .18);
+}
+
+.site-header .brand__name { color: #fff; }
+.site-header .brand__city { color: var(--gold); }
+.site-header .brand__full { color: rgba(255, 255, 255, .66); }
+.site-header .brand__rule { background: rgba(255, 255, 255, .28); }
+
+.site-header .nav__link { color: rgba(255, 255, 255, .84); }
+.site-header .nav__link:hover,
+.site-header .nav__link[aria-current="page"] { color: var(--gold); }
+.site-header .nav__link::after { background: var(--gold); }
+
+/* The primary button is deep green, which would vanish on a deep green bar. */
+.site-header .nav__cta {
+    --btn-bg: var(--gold);
+    --btn-bd: var(--gold);
+    --btn-fg: var(--green-900);
+}
+.site-header .nav__cta:hover {
+    --btn-bg: #fff;
+    --btn-bd: #fff;
+    --btn-fg: var(--green-900);
+}
+
+.site-header .nav-toggle { border-color: rgba(255, 255, 255, .34); }
+.site-header .nav-toggle__bars,
+.site-header .nav-toggle__bars::before,
+.site-header .nav-toggle__bars::after { background: #fff; }
 
 .nav-toggle {
     display: none;
@@ -472,6 +526,18 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .hero__photo { overflow: hidden; }
 .hero__photo img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 
+/* The hero has a chevron notch bitten out of its left edge, which sits over
+   whatever is at the far left of the photo. Where that matters — the culture
+   page, where the person on the left is one of the six ancestries the picture
+   is about — the image is nudged right so the subject clears the notch.
+
+   It has to be a transform: the photo already fills the frame edge to edge, so
+   there is no spare width for object-position to move through. Scaling up
+   slightly creates that room; the translate then spends it. */
+.hero__photo--shift img {
+    transform: scale(1.06) translateX(2.6%);
+}
+
 /* Flag corner flourish, bottom-left of the hero */
 .flag-corner {
     position: absolute;
@@ -481,6 +547,47 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     z-index: 1;
     pointer-events: none;
 }
+
+/* --------------------------------------------------------------------------
+   The same Golden Arrowhead motif, as a class you can put on any section.
+
+   The hero carries it as inline SVG because it is a full-strength part of that
+   composition. Everywhere else it is a quiet background flourish, so it lives
+   here as a background image instead — one class in the markup rather than six
+   lines of SVG repeated down seven files.
+
+   It is deliberately fainter than the hero's. Repeated at full strength down a
+   page it stops being an accent and starts being wallpaper.
+
+   Corner variants exist so consecutive sections can alternate. A motif that
+   lands in the same corner on every section reads as a mistake.
+   -------------------------------------------------------------------------- */
+.section--flag {
+    position: relative;
+    overflow: hidden;
+}
+.section--flag > * { position: relative; z-index: 1; }
+
+.section--flag::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: clamp(90px, 10vw, 150px);
+    aspect-ratio: 1;
+    z-index: 0;
+    pointer-events: none;
+    opacity: .5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpolygon fill='%23009E49' points='0,70 0,50 150,200 130,200'/%3E%3Cpolygon fill='%23FCD116' points='0,132 0,82 118,200 68,200'/%3E%3Cpolygon fill='%230C0C0C' points='0,145 0,132 68,200 55,200'/%3E%3Cpolygon fill='%23CE1126' points='0,200 0,145 55,200'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+/* Flipped into the other three corners. The artwork is drawn bottom-left, so
+   each variant is the same image mirrored or turned. */
+.section--flag-br::after { left: auto; right: 0; transform: scaleX(-1); }
+.section--flag-tr::after { left: auto; right: 0; top: 0; bottom: auto; transform: rotate(180deg); }
+.section--flag-tl::after { top: 0; bottom: auto; transform: scaleY(-1); }
 
 /* --------------------------------------------------------------------------
    8. Sections & bands
@@ -572,6 +679,13 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     border: 1px solid rgba(10, 58, 38, .08);
     border-radius: inherit;
     pointer-events: none;
+}
+
+/* Two onward links side by side, wrapping to stacked when there isn't room. */
+.who__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 32px;
 }
 
 .fact-list {
@@ -865,7 +979,12 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(100deg, rgba(6, 40, 25, .93) 0%, rgba(6, 40, 25, .78) 46%, rgba(6, 40, 25, .35) 100%);
+    /* Lightened so the falls read through. The left end stays heaviest because
+       that is where the heading and paragraph sit — measured against the
+       brightest 1% of that half of the photo, white text still clears 6.5:1,
+       past the 4.5:1 minimum. Going lighter than this starts to eat into that
+       margin, and the photo has bright water in it. */
+    background: linear-gradient(100deg, rgba(6, 40, 25, .55) 0%, rgba(6, 40, 25, .42) 46%, rgba(6, 40, 25, .14) 100%);
 }
 .banner__inner { padding: clamp(60px, 8vw, 120px) 0; }
 .banner h2 { color: #fff; max-width: 18ch; }
@@ -1099,6 +1218,71 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     font-size: .82rem;
     line-height: 1.55;
     color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   News from Guyana
+   Headlines only, so the cards are text — no images. Somebody else's photo
+   would need somebody else's permission.
+   -------------------------------------------------------------------------- */
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.news-card {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 22px 22px 24px;
+    background: var(--paper);
+    border: 1px solid var(--gold-200);
+    border-left: 3px solid var(--gold);
+    border-radius: var(--radius-lg);
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease),
+    border-color .3s var(--ease);
+}
+.news-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--green-700);
+}
+
+/* Which newsroom, said plainly. A reader should never have to guess whether a
+   headline came from the state paper or an independent one. */
+.news-card__source {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--green-700);
+}
+
+.news-card__title { font-size: 1.08rem; line-height: 1.25; margin: 0; }
+.news-card__title a { color: var(--green-900); text-decoration: none; }
+.news-card__title a:hover { text-decoration: underline; }
+
+.news-card__text {
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: var(--ink-soft);
+}
+.news-card__time { font-size: .8rem; color: var(--ink-faint); }
+
+.news-note {
+    margin: 1.8rem 0 0;
+    font-size: .82rem;
+    color: var(--ink-faint);
+    max-width: 70ch;
+}
+
+@media (max-width: 940px) {
+    .news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+    .news-grid { grid-template-columns: 1fr; }
 }
 
 /* --------------------------------------------------------------------------
@@ -1584,6 +1768,19 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     transform: translateY(-2px);
 }
 
+/* Funding acknowledgement. Sits with the land acknowledgement rather than in
+   the copyright bar — both are statements the association is obliged to make,
+   and grant conditions usually require this one to be legible rather than
+   tucked into the small print. */
+.footer__support {
+    margin: 0;
+    padding: 18px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, .14);
+    font-size: .84rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, .72);
+}
+
 .footer__bar {
     display: flex;
     flex-wrap: wrap;
@@ -1679,8 +1876,10 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
         align-items: stretch;
         gap: 0;
         padding: 92px 24px 32px;
-        background: var(--cream);
-        border-bottom: 1px solid var(--line);
+        /* Matches the bar it drops out of. It also inherits the header's white
+           link colour, so a cream panel here would render the menu invisible. */
+        background: var(--green-900);
+        border-bottom: 1px solid rgba(255, 255, 255, .16);
         box-shadow: var(--shadow-lg);
         transform: translateY(-102%);
         transition: transform .4s var(--ease);
@@ -1692,7 +1891,7 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
         display: block;
         padding: 16px 2px;
         font-size: 1.08rem;
-        border-bottom: 1px solid var(--line);
+        border-bottom: 1px solid rgba(255, 255, 255, .14);
     }
     .nav__link::after { display: none; }
     .nav__cta { margin-top: 22px; justify-content: center; }
