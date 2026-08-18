@@ -56,6 +56,8 @@
   <symbol id="i-bowl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 11h17.2a8.6 8.6 0 0 1-17.2 0Z"/><path d="M8 8c0-1.4 1.2-1.8 1.2-2.9S8 3.2 8 3.2M12 8c0-1.4 1.2-1.8 1.2-2.9S12 3.2 12 3.2M16 8c0-1.4 1.2-1.8 1.2-2.9S16 3.2 16 3.2"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h5.4A2.6 2.6 0 0 1 12 7.1v12.4a2 2 0 0 0-2-1.9H4V4.5Z"/><path d="M20 4.5h-5.4A2.6 2.6 0 0 0 12 7.1v12.4a2 2 0 0 1 2-1.9h6V4.5Z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.6 4.6 4.5L19 7"/></symbol>
+  <!-- The flag proper: 2:1 panel, red-white-red, leaf in the centre band. -->
+  <symbol id="i-canada-flag" viewBox="0 0 24 24"><rect y="6" width="24" height="12" fill="#fff"/><path fill="#D80621" d="M0 6h6v12H0zm18 0h6v12h-6z"/><g transform="translate(6 6.3) scale(.5)"><path fill="#D80621" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></g></symbol>
   <symbol id="i-maple" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></symbol>
   <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5" width="18.4" height="14" rx="2.5"/><path d="M2.8 9.6h18.4M6.4 14.6h4"/></symbol>
   <symbol id="i-vote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5 12 17l8-3.5"/><path d="M4 17.4 12 21l8-3.6"/><path d="M8.5 10.5V4.2h7v6.3"/><path d="m10.4 7.4 1.4 1.4 2.4-2.6"/></symbol>
@@ -121,9 +123,9 @@
       <div class="hero__media">
         <div class="hero__edge" aria-hidden="true"></div>
         <div class="hero__photo">
-          <img src="assets/hero-community.jpg"
-               alt="A crowd of Guyanese Calgarians waving the Golden Arrowhead at an outdoor celebration"
-               width="1280" height="720" fetchpriority="high">
+          <img src="assets/new-mainpage-image.jpg"
+               alt="A map of South America with the Guyanese flag pinned at Georgetown"
+               width="860" height="608" fetchpriority="high">
         </div>
       </div>
     </div>
@@ -185,8 +187,11 @@
           <li>Family programming that gives kids a real connection to where they come from</li>
           <li>A network of neighbours for newcomers finding their footing in Calgary</li>
         </ul>
-        <p style="margin-top:2rem">
+        <p class="who__links" style="margin-top:2rem">
           <a class="link-arrow" href="about.html">Read our story
+            <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </a>
+          <a class="link-arrow" href="culture.html#where-it-comes-from">Learn about Guyanese culture
             <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
           </a>
         </p>
@@ -219,6 +224,33 @@
   </section>
 
   <!-- ========================================================
+       News from Guyana
+
+       Headlines pulled from three Guyanese outlets by /api/news — one
+       state-owned paper and two independents, so the association is not seen
+       to favour a side. Headline, one line, and a link out: we point at their
+       journalism, we do not republish it.
+
+       To take this section off the site, delete it. The endpoint can stay;
+       nothing else calls it.
+       ======================================================== -->
+  <section class="section section--flag" id="news" hidden data-news>
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">From back home</span>
+          <h2 class="section-title">What's making news in Guyana.</h2>
+          <p class="section-intro" style="margin-bottom:0">Headlines from Guyanese newsrooms, updated through the day. Follow any story to read it at the source.</p>
+        </div>
+      </div>
+
+      <div class="news-grid" id="newsList"></div>
+
+      <p class="news-note" data-news-sources></p>
+    </div>
+  </section>
+
+  <!-- ========================================================
        Upcoming events preview
        ======================================================== -->
   <section class="section section--band">
@@ -242,7 +274,7 @@
   <!-- ========================================================
        Membership
        ======================================================== -->
-  <section class="section section--sun" id="membership">
+  <section class="section section--sun section--flag section--flag-br" id="membership">
     <div class="shell">
       <div class="section-head">
         <div>
@@ -414,7 +446,7 @@
   <!-- ========================================================
        Contact
        ======================================================== -->
-  <section class="section section--band" id="contact">
+  <section class="section section--band section--flag" id="contact">
     <div class="shell contact-layout">
       <div class="reveal">
         <span class="eyebrow">Get in touch</span>
@@ -606,9 +638,11 @@
     </div>
 
     <div class="land-ack">
-      <span class="land-ack__mark" aria-hidden="true"><svg><use href="#i-maple"/></svg></span>
+      <span class="land-ack__mark" aria-hidden="true"><svg><use href="#i-canada-flag"/></svg></span>
       <p>The GCCA acknowledges that we are operating in the traditional territories of the Blackfoot and the people of the Treaty 7 region in Southern Alberta. The City of Calgary is also home to the Métis Nation of Alberta, Region III.</p>
     </div>
+
+    <p class="footer__support">Supported in part by Alberta Gaming, Liquor &amp; Cannabis (AGLC) &ndash; Charitable Gaming Program</p>
 
     <div class="footer__bar">
       <p style="margin:0">&copy; <span data-year>2026</span> Guyana Canada Cultural Association (Calgary). All rights reserved.</p>
