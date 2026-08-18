@@ -30,21 +30,28 @@
      1BxiMVs0XRA5nFMdKv…
 
    -------------------------------------------------------------------------- */
+/* Owned by gcca.support.1991@gmail.com — the operational account. Not the
+   public gccacalgary address; see DEPLOY.md for why those stay separate. */
 const SPREADSHEETS = {
-    membership: '1c5b_gL0BtFyT3_O6cPqQ1jJsbkKBqk7TAb7YREz7KMA',   // GCCA — Membership
-    events:     '1A1ZxTwCcIEGaHrjZcBjMAJLM_U_GKdq1sHMi-wijDX0',   // GCCA — Event registrations
-    inquiries:  '1jDksrOJ99TGqJujZytZorYZdrQgdx069Dt0-SH8mdF8'    // GCCA — Inquiries
+    membership: '1wGVkFM_JKMhyKKY8HhTkIzWfAFRZ4iHrra4ciQR05l0',   // GCCA — Membership
+    events:     '1of0F_Mf4MDc1rsoOg7HEK2T8T4wKwmuluUpuE67aYN0',   // GCCA — Event registrations
+    inquiries:  '1mFBnf2Gls6wvlFGqMkdea9c2PdiOGsIgaXNVP0fbzmc'    // GCCA — Inquiries
 };
 
 /* Bumped whenever the columns or the routing change. Returned by doGet, so
    opening the /exec URL shows which version is actually deployed — editing the
    file changes nothing until "New version" is pushed, and this is the only way
    to tell the two apart from outside. */
-const VERSION = '2026-08-14a';
+const VERSION = '2026-08-17a';
 
-/* Who gets told when money is owed. Currently the development address —
-   one of the values that changes at handover. */
-const TREASURER_EMAIL = 'dardax86@gmail.com';
+/* Who gets told when money is owed. Used for every alert this project sends:
+   new registrations and membership applications here, and in Reminders.gs the
+   reply-to on renewal emails, the "could not send" warning, and the address
+   members are told to write to if a reminder reaches them in error.
+
+   NOTE: this is who receives. Mail is SENT by whoever owns the script, so the
+   from-address only changes when the project itself moves accounts. */
+const TREASURER_EMAIL = 'gcca.support.1991@gmail.com';
 
 /* --------------------------------------------------------------------------
    Column layouts. Each is [heading, source], where source is a key from the
