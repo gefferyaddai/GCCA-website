@@ -38,6 +38,8 @@
     <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h5.4A2.6 2.6 0 0 1 12 7.1v12.4a2 2 0 0 0-2-1.9H4V4.5Z"/><path d="M20 4.5h-5.4A2.6 2.6 0 0 0 12 7.1v12.4a2 2 0 0 1 2-1.9h6V4.5Z"/></symbol>
     <symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19V5a1.5 1.5 0 0 1 1.5-1.5Z"/><path d="M8.4 8h7.2M8.4 12h7.2M8.4 16h4.4"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v11m0 0 4.5-4.5M12 14.5 7.5 10M4.5 17v2.5a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V17"/></symbol>
+    <!-- The flag proper: 2:1 panel, red-white-red, leaf in the centre band. -->
+    <symbol id="i-canada-flag" viewBox="0 0 24 24"><rect y="6" width="24" height="12" fill="#fff"/><path fill="#D80621" d="M0 6h6v12H0zm18 0h6v12h-6z"/><g transform="translate(6 6.3) scale(.5)"><path fill="#D80621" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></g></symbol>
     <symbol id="i-maple" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></symbol>
     <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.6 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.3H7.6V13h2.8v8h3.2Z"/></symbol>
     <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
@@ -95,8 +97,8 @@
                 <div class="hero__edge" aria-hidden="true"></div>
                 <div class="hero__photo">
                     <img src="assets/about-hero.jpg"
-                         alt="Members of GCCA Calgary gathered together outdoors at a community event"
-                         width="1200" height="1000" fetchpriority="high">
+                         alt="Scenes of Guyanese celebration — carnival costume, Diwali lamps, Phagwah colours, and supporters waving the Golden Arrowhead"
+                         width="1600" height="900" fetchpriority="high">
                 </div>
             </div>
         </div>
@@ -353,7 +355,7 @@
     <!-- ========================================================
          Governance — registration details and by-laws
          ======================================================== -->
-    <section class="section section--edge" id="governance">
+    <section class="section section--edge section--flag section--flag-br" id="governance">
         <div class="shell">
             <div class="section-head">
                 <div>
@@ -574,9 +576,11 @@
         </div>
 
         <div class="land-ack">
-            <span class="land-ack__mark" aria-hidden="true"><svg><use href="#i-maple"/></svg></span>
+            <span class="land-ack__mark" aria-hidden="true"><svg><use href="#i-canada-flag"/></svg></span>
             <p>The GCCA acknowledges that we are operating in the traditional territories of the Blackfoot and the people of the Treaty 7 region in Southern Alberta. The City of Calgary is also home to the Métis Nation of Alberta, Region III.</p>
         </div>
+
+        <p class="footer__support">Supported in part by Alberta Gaming, Liquor &amp; Cannabis (AGLC) &ndash; Charitable Gaming Program</p>
 
         <div class="footer__bar">
             <p style="margin:0">&copy; <span data-year>2026</span> Guyana Canada Cultural Association (Calgary). All rights reserved.</p>
