@@ -169,27 +169,41 @@ module.exports = async function handler(req, res) {
         ? site + '/index.html?membership=success#membership'
         : site + '/events.html?registration=success#register';
 
-    try {
-        const response = await fetch(host + '/v2/online-checkout/payment-links', {
-            method: 'POST',
-            headers: {
-                'Square-Version': SQUARE_VERSION,
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                /* Square rejects a repeat of the same key, which stops a
-                   double-click becoming two payment links. */
-                idempotency_key: (body.type + '-' + Date.now() + '-' +
-                    Math.random().toString(36).slice(2, 10)).slice(0, 192),
-                order: { location_id: location, line_items: order.items },
-                checkout_options: { redirect_url: back, ask_for_shipping_address: false },
-                pre_populated_data: { buyer_email: body.email || undefined },
-                payment_note: ('GCCA Calgary — ' + order.label).slice(0, 500)
-            })
-        });
+    /* Square is fussy about buyer_email — it rejects addresses whose domain it
+       does not like, example.com among them. Pre-filling the email is only a
+       convenience, so it must never be the reason somebody cannot pay: if
+       Square objects to it, the request is sent again without it. */
+    const askSquare = (withEmail) => fetch(host + '/v2/online-checkout/payment-links', {
+        method: 'POST',
+        headers: {
+            'Square-Version': SQUARE_VERSION,
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            /* Square rejects a repeat of the same key, which stops a
+               double-click becoming two payment links. */
+            idempotency_key: (body.type + '-' + Date.now() + '-' +
+                Math.random().toString(36).slice(2, 10)).slice(0, 192),
+            order: { location_id: location, line_items: order.items },
+            checkout_options: { redirect_url: back, ask_for_shipping_address: false },
+            pre_populated_data: withEmail ? { buyer_email: body.email } : undefined,
+            payment_note: ('GCCA Calgary — ' + order.label).slice(0, 500)
+        })
+    });
 
-        const data = await response.json();
+    try {
+        let response = await askSquare(Boolean(body.email));
+        let data = await response.json();
+
+        const emailRejected = (data.errors || []).some(e =>
+            String(e.field || '').includes('buyer_email'));
+
+        if (emailRejected) {
+            console.warn('[square] buyer_email rejected, retrying without it');
+            response = await askSquare(false);
+            data = await response.json();
+        }
 
         if (!response.ok || !data.payment_link) {
             console.error('[square] payment link failed:', JSON.stringify(data.errors || data));
