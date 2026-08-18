@@ -1,5 +1,17 @@
 # Handover checklist
 
+## Two addresses, two jobs — do not merge them
+
+| | |
+|---|---|
+| **`gccacalgary@gmail.com`** | The public face. This is the address printed on the website — footers, contact page, refund policy, by-laws. Members and the public write here. |
+| **`gcca.support.1991@gmail.com`** | The operational account. It owns the three spreadsheets and the Apps Script, receives every form submission alert, and is what automated mail is sent from. |
+
+The website should never be changed to show the support address, and the
+scripts should never be pointed back at the public one. If in doubt: anything
+a visitor reads is `gccacalgary`; anything a machine sends or stores is
+`gcca.support.1991`.
+
 The site is being built and tested on personal accounts, then handed to GCCA
 Calgary. **Every value that has to change at that point is listed here.** If a
 value is developer-owned, it is in this file.
@@ -20,7 +32,7 @@ There are **three**, plus the Apps Script project that writes to them.
 | `GCCA — Event registrations` owner | `dardax86@gmail.com` | `gccacalgary@gmail.com` |
 | `GCCA — Inquiries` owner | `dardax86@gmail.com` | `gccacalgary@gmail.com` |
 | `SPREADSHEETS` ids in `apps-script/Code.gs` | dev spreadsheet ids | unchanged, *if* ownership is transferred rather than the sheets recreated |
-| `TREASURER_EMAIL` in `apps-script/Code.gs` | `dardax86@gmail.com` | the treasurer's address |
+| `TREASURER_EMAIL` in `apps-script/Code.gs` | `gcca.support.1991@gmail.com` | confirm this is the address the treasurer actually reads |
 | `SHEET_ENDPOINT` in `js/script.js` | dev deployment `/exec` URL | the GCCA deployment `/exec` URL |
 
 **Transfer ownership rather than recreating.** A transferred spreadsheet keeps
