@@ -10,7 +10,7 @@
 
    Deploying it: apps-script/README.md
    Changing it at handover: DEPLOY.md in the repo root. */
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyDE7PqiIvhyrD3Q7WaD06l3WU9yNr-C1CATnZpe0jz9HUeUVJUvZ2LrZRQWE1y68Jk/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyJh6JlucMfV0gcQySAczG-amHNfcPOgkQpjnRNyGsxObzlTuWyhpoSi0H_hVzpmss/exec';
 
 const CONFIG = {
     /* ---------------------------------------------------------------------
@@ -1223,6 +1223,113 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   Landing on a #section from another page
+
+   The browser jumps to the anchor as soon as the HTML is parsed — before the
+   photos above it have loaded and claimed their space. Those images then push
+   the target hundreds of pixels further down, leaving the visitor stranded
+   near the top of a page they were sent into the middle of.
+
+   So once everything has loaded, aim again. If the visitor has already started
+   scrolling themselves, leave them alone — yanking the page out from under
+   someone is worse than landing in the wrong place.
+   ========================================================================== */
+function initHashLanding() {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    let userMoved = false;
+    const noteUserMoved = () => { userMoved = true; };
+    ['wheel', 'touchstart', 'keydown'].forEach(type =>
+        window.addEventListener(type, noteUserMoved, { passive: true, once: true }));
+
+    const settle = () => {
+        window.setTimeout(() => {
+            if (userMoved) return;
+            /* Only correct a genuine miss. The offset allows for the sticky
+               header, which scroll-padding-top already accounts for. */
+            const off = target.getBoundingClientRect().top;
+            /* Instant, not smooth. This is correcting a landing the visitor
+               already asked for — animating them down from the top would be
+               slower, and the stylesheet's smooth scrolling is also throttled
+               in background tabs, which would leave the fix silently doing
+               nothing. */
+            if (Math.abs(off) > 140) target.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }, 140);
+    };
+
+    if (document.readyState === 'complete') settle();
+    else window.addEventListener('load', settle, { once: true });
+}
+
+/* ==========================================================================
+   News from Guyana
+
+   Headlines come from /api/news, which reads three Guyanese feeds server-side
+   — the browser cannot fetch them directly, they send no CORS headers.
+
+   The section is marked hidden in the markup and only revealed once headlines
+   actually arrive. If the outlets are down, or the site is on hosting without
+   serverless functions, visitors simply never see it rather than being shown
+   an empty panel or an error about somebody else's server.
+   ========================================================================== */
+function relativeDay(iso) {
+    if (!iso) return '';
+    const then = new Date(iso);
+    if (isNaN(then)) return '';
+
+    const hours = (Date.now() - then.getTime()) / 36e5;
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return Math.round(hours) + ' hour' + (Math.round(hours) === 1 ? '' : 's') + ' ago';
+    const days = Math.round(hours / 24);
+    if (days < 7) return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+    return then.toLocaleDateString('en-CA', { day: 'numeric', month: 'long' });
+}
+
+async function initNews() {
+    const section = $('[data-news]');
+    const list = $('#newsList');
+    if (!section || !list) return;
+
+    let data;
+    try {
+        const response = await fetch('/api/news', { headers: { 'Accept': 'application/json' } });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        data = await response.json();
+    } catch (error) {
+        console.info('[GCCA] News unavailable, section left hidden:', error.message);
+        return;
+    }
+
+    const items = (data && data.items) || [];
+    if (!items.length) return;
+
+    /* Headline, one line, link out — never the article itself. Every link
+       leaves the site, so it opens in a new tab and says where it is going. */
+    list.innerHTML = items.map(item =>
+        '<article class="news-card">' +
+        '<span class="news-card__source">' + esc(item.source) + '</span>' +
+        '<h3 class="news-card__title">' +
+        '<a href="' + esc(item.link) + '" target="_blank" rel="noopener noreferrer">' +
+        esc(item.title) + '</a></h3>' +
+        (item.snippet ? '<p class="news-card__text">' + esc(item.snippet) + '</p>' : '') +
+        '<span class="news-card__time">' + esc(relativeDay(item.published)) + '</span>' +
+        '</article>'
+    ).join('');
+
+    const note = $('[data-news-sources]');
+    if (note && data.sources) {
+        note.textContent = 'Headlines from ' + data.sources.join(', ')
+            + '. GCCA Calgary is not affiliated with any of them, and links open on their own sites.';
+    }
+
+    section.hidden = false;
+}
+
+/* ==========================================================================
    A long document's table of contents. It is a sidebar on desktop and stays
    open; on a phone the same list is most of a screen to scroll past, so it
    starts collapsed. Done here rather than in CSS because a <details> cannot be
@@ -1273,6 +1380,8 @@ function init() {
     initReturnMessages();
     initDocContents();
     initPrintButtons();
+    initNews();
+    initHashLanding();
 }
 
 if (document.readyState === 'loading') {
