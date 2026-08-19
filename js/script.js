@@ -152,25 +152,38 @@ function initChrome() {
 /* ==========================================================================
    Scroll reveal
    ========================================================================== */
-function initReveal() {
-    const items = $$('.reveal');
-    if (!items.length) return;
+/* Held at module scope so content rendered later — the news headlines arrive
+   after a network round trip, long after this has run — can still be handed to
+   the same observer. Anything with .reveal that nobody observes stays at
+   opacity 0 forever, which is a far worse bug than no animation. */
+let revealObserver = null;
 
+function initReveal() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || !('IntersectionObserver' in window)) {
+
+    if (!reduced && 'IntersectionObserver' in window) {
+        revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            });
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    }
+
+    observeReveals();
+}
+
+/* Call after inserting markup that contains .reveal. With no observer — reduced
+   motion, or a browser without IntersectionObserver — everything is simply
+   shown. */
+function observeReveals(root) {
+    const items = $$('.reveal:not(.is-visible)', root || document);
+    if (!revealObserver) {
         items.forEach(el => el.classList.add('is-visible'));
         return;
     }
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-        });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-
-    items.forEach(el => observer.observe(el));
+    items.forEach(el => revealObserver.observe(el));
 }
 
 /* ==========================================================================
@@ -716,7 +729,12 @@ function eventCardHTML(ev, options) {
         ' <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg></a>';
 
     return '' +
+        /* Cards are built in JS, so they never picked up the data-delay that the
+           hand-written markup uses. Without it a row of three fades in as one
+           block. Cycling 0–2 across the row staggers them the way the rest of
+           the site does. */
         '<article class="card event-card reveal' + (past ? ' event-card--past' : '') + '"' +
+        ' data-delay="' + ((opts.index || 0) % 3) + '"' +
         (opts.hidden ? ' hidden' : '') + ' id="event-' + esc(ev.slug) + '">' +
         '<div class="event-card__media">' +
         '<span class="date-badge">' +
@@ -813,15 +831,15 @@ function initEvents() {
     const preview = document.getElementById('eventPreview');
     if (preview) {
         preview.innerHTML = upcoming.length
-            ? upcoming.slice(0, 3).map(ev =>
-                eventCardHTML(ev, { href: 'events.html?event=' + encodeURIComponent(ev.slug) + '#register' })).join('')
+            ? upcoming.slice(0, 3).map((ev, index) =>
+                eventCardHTML(ev, { index, href: 'events.html?event=' + encodeURIComponent(ev.slug) + '#register' })).join('')
             : '<p class="events-empty">Next season\'s schedule is on its way. Join the mailing list below to hear it first.</p>';
     }
 
     // Events page — everything.
     const list = document.getElementById('upcomingList');
     if (list) {
-        list.innerHTML = upcoming.map(ev => eventCardHTML(ev, { href: '#register' })).join('');
+        list.innerHTML = upcoming.map((ev, index) => eventCardHTML(ev, { index, href: '#register' })).join('');
 
         const empty = document.getElementById('upcomingEmpty');
         if (empty) empty.hidden = upcoming.length > 0;
@@ -834,7 +852,7 @@ function initEvents() {
         if (pastList && pastSection && past.length) {
             pastSection.hidden = false;
             pastList.innerHTML = past.map((ev, index) =>
-                eventCardHTML(ev, { past: true, hidden: index >= VISIBLE })).join('');
+                eventCardHTML(ev, { index, past: true, hidden: index >= VISIBLE })).join('');
 
             if (toggle && past.length > VISIBLE) {
                 toggle.hidden = false;
@@ -1223,6 +1241,109 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   Photo strip
+
+   The seamless loop needs the photos present twice, so the second set slides
+   into place exactly as the first leaves. Doing that here rather than in the
+   markup means the page carries one copy of the list: editing the strip is
+   editing eight lines, not sixteen kept in sync by hand.
+
+   The clones are hidden from assistive technology — a screen reader should
+   hear each photo once, not twice.
+   ========================================================================== */
+function initPhotoStrip() {
+    document.querySelectorAll('[data-strip]').forEach(strip => {
+        const track = strip.querySelector('.strip__track');
+        if (!track) return;
+
+        const items = Array.from(track.children);
+        if (!items.length) return;
+
+        /* Speed follows the number of photos, so the band moves at the same
+           pace whatever it holds. */
+        track.style.setProperty('--strip-count', String(items.length));
+
+        items.forEach(item => {
+            const copy = item.cloneNode(true);
+            copy.setAttribute('aria-hidden', 'true');
+            track.appendChild(copy);
+        });
+    });
+}
+
+/* ==========================================================================
+   Scroll-driven motion — parallax banners and reading progress
+
+   Both hang off one scroll listener and one requestAnimationFrame, rather than
+   each adding their own. Scroll handlers that write to the DOM directly are
+   the classic way to make a page feel worse than no animation at all.
+
+   Anyone who has asked for reduced motion gets neither.
+   ========================================================================== */
+function initScrollMotion() {
+    const root = document.documentElement;
+    root.setAttribute('data-motion', 'starting');
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        root.setAttribute('data-motion', 'reduced');
+        return;
+    }
+
+    const banners = Array.from(document.querySelectorAll('.banner__bg'));
+
+    /* Only long pages earn a progress bar. On a short page it would sit at
+       full width the moment you arrived, which says nothing. */
+    let bar = null;
+    if (root.scrollHeight > window.innerHeight * 2.5
+        && document.querySelector('.doc-body, .policy')) {
+        bar = document.createElement('div');
+        bar.className = 'read-progress';
+        bar.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(bar);
+    }
+
+    if (!banners.length && !bar) {
+        root.setAttribute('data-motion', 'nothing-to-move');
+        return;
+    }
+
+    let ticking = false;
+
+    const paint = () => {
+        ticking = false;
+
+        if (bar) {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            const through = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+            bar.style.transform = 'scaleX(' + through.toFixed(4) + ')';
+        }
+
+        banners.forEach(bg => {
+            const box = bg.getBoundingClientRect();
+            if (box.bottom < 0 || box.top > window.innerHeight) return;   // off screen
+
+            /* How far the banner has travelled through the viewport, -1 to 1.
+               The image shifts a fraction of that, so it lags the page. */
+            const progress = (box.top + box.height / 2 - window.innerHeight / 2)
+                / (window.innerHeight / 2 + box.height / 2);
+            const img = bg.firstElementChild;
+            if (img) img.style.transform = 'translate3d(0,' + (progress * 9).toFixed(2) + '%,0)';
+        });
+    };
+
+    const onScroll = () => {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(paint);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    paint();
+    root.setAttribute('data-motion', 'on:' + banners.length + (bar ? '+bar' : ''));
+}
+
+/* ==========================================================================
    Landing on a #section from another page
 
    The browser jumps to the anchor as soon as the HTML is parsed — before the
@@ -1309,8 +1430,8 @@ async function initNews() {
 
     /* Headline, one line, link out — never the article itself. Every link
        leaves the site, so it opens in a new tab and says where it is going. */
-    list.innerHTML = items.map(item =>
-        '<article class="news-card">' +
+    list.innerHTML = items.map((item, index) =>
+        '<article class="news-card reveal" data-delay="' + (index % 3) + '">' +
         '<span class="news-card__source">' + esc(item.source) + '</span>' +
         '<h3 class="news-card__title">' +
         '<a href="' + esc(item.link) + '" target="_blank" rel="noopener noreferrer">' +
@@ -1327,6 +1448,7 @@ async function initNews() {
     }
 
     section.hidden = false;
+    observeReveals(list);      // these arrived after initReveal ran
 }
 
 /* ==========================================================================
@@ -1381,6 +1503,8 @@ function init() {
     initDocContents();
     initPrintButtons();
     initNews();
+    initPhotoStrip();
+    initScrollMotion();
     initHashLanding();
 }
 

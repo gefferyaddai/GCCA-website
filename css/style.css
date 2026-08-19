@@ -372,7 +372,16 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     justify-content: space-between;
     gap: 24px;
     padding: 16px 0;
+    transition: padding .35s var(--ease);
 }
+
+/* The bar tightens once you leave the top of the page, giving a little more
+   room to read and making the header feel responsive rather than fixed
+   furniture. Small numbers on purpose — a header that visibly collapses is
+   distracting on every scroll. */
+.site-header.is-stuck .header__inner { padding: 9px 0; }
+.brand__mark { transition: width .35s var(--ease); }
+.site-header.is-stuck .brand__mark { width: 50px; }
 
 .nav { display: flex; align-items: center; gap: 34px; }
 
@@ -1645,6 +1654,10 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .tabs__btn:hover { color: var(--green-700); }
 .tabs__btn[aria-selected="true"] { color: var(--green-800); border-bottom-color: var(--gold); }
 .tabs__panel[hidden] { display: none; }
+/* Switching threads on the culture page used to be an instant swap. A short
+   fade-and-rise makes it read as content arriving rather than the page
+   redrawing. */
+.tabs__panel:not([hidden]) { animation: rise-in .5s var(--ease) both; }
 
 .glossary {
     display: grid;
@@ -1850,7 +1863,141 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 .reveal[data-delay="1"] { transition-delay: .09s; }
 .reveal[data-delay="2"] { transition-delay: .18s; }
 .reveal[data-delay="3"] { transition-delay: .27s; }
+.reveal[data-delay="4"] { transition-delay: .36s; }
+.reveal[data-delay="5"] { transition-delay: .45s; }
 .no-js .reveal { opacity: 1; transform: none; }
+
+/* --------------------------------------------------------------------------
+   Hero entrance
+
+   Everything below the fold already animates in on scroll, but the hero — the
+   one thing every visitor sees — simply appeared. That is most of why the site
+   felt still.
+
+   Done with CSS animation rather than a JS-added class on purpose: `both` fill
+   mode holds the start state, so there is no moment where the markup is
+   present but invisible, and nothing breaks if JavaScript fails. The
+   reduced-motion block near the end of this file collapses the duration, so
+   those visitors get the finished state immediately.
+   -------------------------------------------------------------------------- */
+@keyframes rise-in {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes settle-in {
+    from { opacity: 0; transform: scale(1.05); }
+    to   { opacity: 1; transform: none; }
+}
+
+.hero__copy > * { animation: rise-in .8s var(--ease) both; }
+.hero__copy > *:nth-child(1) { animation-delay: .06s; }
+.hero__copy > *:nth-child(2) { animation-delay: .16s; }
+.hero__copy > *:nth-child(3) { animation-delay: .26s; }
+.hero__copy > *:nth-child(4) { animation-delay: .36s; }
+
+/* The photo settles rather than rises — a slow release from slightly enlarged,
+   which reads as the image coming to rest instead of sliding around. */
+.hero__media { animation: settle-in 1.1s var(--ease) both; }
+
+/* The flag corner arrives last, once the words have landed. */
+.flag-corner { animation: rise-in .9s var(--ease) .5s both; }
+
+/* --------------------------------------------------------------------------
+   Parallax on the full-bleed banners
+
+   The photo is made taller than its frame and then drifts against the scroll,
+   so the falls sit behind the text rather than on the same plane. The extra
+   height is what stops the drift exposing an edge.
+   -------------------------------------------------------------------------- */
+.banner__bg { overflow: hidden; }
+.banner__bg img {
+    height: 128%;
+    will-change: transform;
+}
+
+/* --------------------------------------------------------------------------
+   Photo strip — a continuously scrolling band
+
+   The track holds the photos twice over, so when the animation has moved
+   exactly half its width the second copy sits where the first began and the
+   restart is invisible. That is the whole trick; everything else is polish.
+
+   Duration scales with the number of photos (set by script.js as --strip-count)
+   so adding or removing images keeps the speed the same rather than making the
+   band race or crawl.
+   -------------------------------------------------------------------------- */
+.strip-section { overflow: hidden; }
+
+.strip {
+    position: relative;
+    margin-top: 1.6rem;
+    /* Fades the ends into the page so photos arrive and leave rather than
+       being cut off by the window edge. */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+
+.strip__track {
+    display: flex;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: max-content;
+    animation: strip-scroll calc(var(--strip-count, 8) * 4.5s) linear infinite;
+}
+
+/* Pausing on hover lets someone actually look at a photo that catches their
+   eye, instead of chasing it across the screen. */
+.strip:hover .strip__track,
+.strip:focus-within .strip__track { animation-play-state: paused; }
+
+@keyframes strip-scroll {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.strip__item {
+    flex: none;
+    width: clamp(210px, 22vw, 300px);
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gold-200);
+    background: var(--cream-2);
+}
+.strip__item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .6s var(--ease);
+}
+.strip__item:hover img { transform: scale(1.06); }
+
+/* Standing still is the right answer for anyone who asked for less motion —
+   the photos are still all there to scroll through by hand. */
+@media (prefers-reduced-motion: reduce) {
+    .strip__track { animation: none; }
+    .strip { overflow-x: auto; }
+}
+
+/* --------------------------------------------------------------------------
+   Reading progress — long documents only
+
+   The by-laws run to sixteen articles and the refund policy is not much
+   shorter. A thin bar showing how far through you are is the one piece of
+   motion here that does a job rather than decorates.
+   -------------------------------------------------------------------------- */
+.read-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+    background: linear-gradient(to right, var(--gold), var(--green-600));
+    z-index: 95;
+    pointer-events: none;
+}
 
 /* --------------------------------------------------------------------------
    23. Responsive
