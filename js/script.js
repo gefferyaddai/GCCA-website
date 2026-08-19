@@ -117,14 +117,19 @@ function initChrome() {
     const nav = $('#primaryNav');
     if (!toggle || !nav) return;
 
-    const closeNav = () => {
-        nav.classList.remove('is-open');
-        toggle.setAttribute('aria-expanded', 'false');
+    /* The menu covers the whole viewport on mobile, so the page behind it must
+       stop scrolling — otherwise a swipe over the panel scrolls the article
+       underneath and the visitor lands somewhere else on closing. */
+    const setNav = (open) => {
+        nav.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+        document.body.classList.toggle('nav-open', open);
     };
 
+    const closeNav = () => setNav(false);
+
     toggle.addEventListener('click', () => {
-        const open = nav.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', String(open));
+        setNav(!nav.classList.contains('is-open'));
     });
 
     nav.addEventListener('click', (e) => {
@@ -1241,6 +1246,38 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   From Guyana to Calgary
+
+   Runs the route once, the first time the row comes into view. All of the
+   timing lives in the stylesheet; this only decides when to start it.
+
+   `is-armed` is added straight away and is the only thing that hides the
+   stops. If this file never loads, or throws before this point, the row is
+   simply there — never blank.
+   ========================================================================== */
+function initJourney() {
+    const row = $('.journey');
+    if (!row) return;
+
+    row.classList.add('is-armed');
+
+    if (!('IntersectionObserver' in window)) {
+        row.classList.add('is-running');
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+            entry.target.classList.add('is-running');
+        });
+    }, { threshold: 0.35 });
+
+    observer.observe(row);
+}
+
+/* ==========================================================================
    Photo strip
 
    The seamless loop needs the photos present twice, so the second set slides
@@ -1503,6 +1540,7 @@ function init() {
     initDocContents();
     initPrintButtons();
     initNews();
+    initJourney();
     initPhotoStrip();
     initScrollMotion();
     initHashLanding();
