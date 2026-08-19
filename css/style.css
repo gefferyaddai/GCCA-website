@@ -900,8 +900,31 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     right: calc(-50% + 44px);
     height: 1px;
     background: repeating-linear-gradient(to right, var(--gold-300) 0 7px, transparent 7px 13px);
+    /* So the leg can be drawn outward from the stop it leaves, not from the
+       middle. See the journey animation below. */
+    transform-origin: left center;
 }
 .journey__step:last-child::after { display: none; }
+
+/* The travelling marker — a gold dot that runs the length of the dotted leg.
+   Drawn as a background image on a box the exact width of the leg, so the
+   percentage background-position does the "container width minus dot width"
+   arithmetic for us and the dot lands precisely on the next stop. */
+.journey__step::before {
+    content: "";
+    position: absolute;
+    top: 27px;
+    left: calc(50% + 44px);
+    right: calc(-50% + 44px);
+    height: 9px;
+    pointer-events: none;
+    opacity: 0;
+    background-image: radial-gradient(circle at center, var(--gold-600) 0 3.6px, transparent 3.8px);
+    background-size: 9px 9px;
+    background-repeat: no-repeat;
+    background-position: 0 center;
+}
+.journey__step:last-child::before { display: none; }
 .journey__label {
     margin-top: 14px;
     font-size: .93rem;
@@ -910,6 +933,67 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 }
 .journey__text { font-size: .87rem; color: var(--ink-soft); margin: .25rem 0 0; }
 .journey__step:nth-child(even) .journey__label { color: var(--gold-600); }
+
+/* --------------------------------------------------------------------------
+   The journey, drawn
+
+   Four stops on a route, so they arrive like one: a stop appears, a marker
+   sets off along the dotted leg and draws it in behind itself, and the next
+   stop lands as the marker arrives. About three seconds end to end.
+
+   Two classes rather than one. `is-armed` is added by the script on load and
+   is the only thing that hides the stops, so a visitor whose JavaScript never
+   arrives reads a finished row instead of four blank columns. `is-running` is
+   added when the row scrolls into view and starts the sequence.
+   -------------------------------------------------------------------------- */
+.journey.is-armed .journey__step { opacity: 0; }
+.journey.is-armed .journey__step::after { transform: scaleX(0); }
+
+.journey.is-running .journey__step { animation: journey-stop .55s var(--ease) both; }
+.journey.is-running .journey__step::after { animation: journey-leg .55s linear both; }
+.journey.is-running .journey__step::before { animation: journey-marker .55s linear both; }
+
+/* Stop n lands at (n-1) × .9s; the leg out of it sets off .35s after it, so
+   the marker is already moving while the stop is still settling. */
+.journey.is-running .journey__step:nth-child(2) { animation-delay: .9s; }
+.journey.is-running .journey__step:nth-child(3) { animation-delay: 1.8s; }
+.journey.is-running .journey__step:nth-child(4) { animation-delay: 2.7s; }
+
+.journey.is-running .journey__step:nth-child(1)::after,
+.journey.is-running .journey__step:nth-child(1)::before { animation-delay: .35s; }
+.journey.is-running .journey__step:nth-child(2)::after,
+.journey.is-running .journey__step:nth-child(2)::before { animation-delay: 1.25s; }
+.journey.is-running .journey__step:nth-child(3)::after,
+.journey.is-running .journey__step:nth-child(3)::before { animation-delay: 2.15s; }
+
+@keyframes journey-stop {
+    from { opacity: 0; transform: translateY(14px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes journey-leg {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+}
+/* The dot fades in as it leaves and out as it lands, so it reads as motion
+   along the route rather than a bead that parks on each icon. */
+@keyframes journey-marker {
+    0%   { opacity: 0; background-position: 0 center; }
+    14%  { opacity: 1; }
+    86%  { opacity: 1; }
+    100% { opacity: 0; background-position: 100% center; }
+}
+
+/* The same two, turned through ninety degrees for the stacked layout. */
+@keyframes journey-leg-down {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+@keyframes journey-marker-down {
+    0%   { opacity: 0; background-position: center 0; }
+    14%  { opacity: 1; }
+    86%  { opacity: 1; }
+    100% { opacity: 0; background-position: center 100%; }
+}
 
 /* --------------------------------------------------------------------------
    13. Team
@@ -1899,8 +1983,32 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
    which reads as the image coming to rest instead of sliding around. */
 .hero__media { animation: settle-in 1.1s var(--ease) both; }
 
+/* --------------------------------------------------------------------------
+   The diagonal
+
+   The gold wedge is the most recognisable thing about this site — it appears
+   on every hero and echoes the Golden Arrowhead. Sweeping it in from the right
+   turns the page load into something branded rather than generic.
+
+   It rests at translateX(-13px), so the animation has to finish there rather
+   than at zero, or the shape jumps when the animation hands back to the
+   stylesheet.
+   -------------------------------------------------------------------------- */
+@keyframes edge-sweep {
+    from { transform: translateX(84px); opacity: 0; }
+    to   { transform: translateX(-13px); opacity: 1; }
+}
+.hero__edge { animation: edge-sweep 1s var(--ease) .2s both; }
+
 /* The flag corner arrives last, once the words have landed. */
 .flag-corner { animation: rise-in .9s var(--ease) .5s both; }
+
+/* One mobile-menu item sliding in. Used only inside the max-width: 940px
+   block, but keyframes cannot live inside a media query and be reused. */
+@keyframes nav-item {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
 
 /* --------------------------------------------------------------------------
    Parallax on the full-bleed banners
@@ -2015,33 +2123,81 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
     html { scroll-padding-top: 88px; }
 
     .nav-toggle { display: inline-flex; }
+
+    /* Full-screen menu. It takes the whole viewport rather than dropping a
+       panel over the top slice, so nothing of the page shows through to
+       compete with it and the links can sit at a comfortable thumb size.
+       100dvh, not 100vh: on mobile Safari the URL bar makes vh too tall and
+       the last link ends up under the browser chrome. */
     .nav {
         position: fixed;
-        inset: 0 0 auto;
-        top: 0;
+        inset: 0;
+        height: 100dvh;
         flex-direction: column;
+        justify-content: center;
         align-items: stretch;
         gap: 0;
-        padding: 92px 24px 32px;
-        /* Matches the bar it drops out of. It also inherits the header's white
+        padding: 92px 26px 40px;
+        overflow-y: auto;
+        /* Matches the bar it opens from. It also inherits the header's white
            link colour, so a cream panel here would render the menu invisible. */
         background: var(--green-900);
-        border-bottom: 1px solid rgba(255, 255, 255, .16);
         box-shadow: var(--shadow-lg);
-        transform: translateY(-102%);
-        transition: transform .4s var(--ease);
+        /* Closed: pushed off the top AND made non-interactive, so keyboard
+           focus cannot wander into a menu nobody can see. Visibility is
+           delayed on the way out only, letting the slide finish first. */
+        transform: translateY(-100%);
+        visibility: hidden;
+        transition: transform .42s var(--ease), visibility 0s linear .42s;
         z-index: 80;
     }
-    .nav.is-open { transform: translateY(0); }
+    .nav.is-open {
+        transform: translateY(0);
+        visibility: visible;
+        transition: transform .42s var(--ease), visibility 0s linear 0s;
+    }
+    /* The flag corner, so the open menu still reads as GCCA rather than a
+       plain green sheet. */
+    .nav::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 160px;
+        aspect-ratio: 1;
+        pointer-events: none;
+        opacity: .55;
+        z-index: -1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpolygon fill='%23009E49' points='0,70 0,50 150,200 130,200'/%3E%3Cpolygon fill='%23FCD116' points='0,132 0,82 118,200 68,200'/%3E%3Cpolygon fill='%230C0C0C' points='0,145 0,132 68,200 55,200'/%3E%3Cpolygon fill='%23CE1126' points='0,200 0,145 55,200'/%3E%3C/svg%3E");
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+    }
+
     .nav__list { flex-direction: column; align-items: stretch; gap: 0; }
     .nav__link {
         display: block;
-        padding: 16px 2px;
-        font-size: 1.08rem;
+        padding: 15px 2px;
+        font-size: 1.34rem;
+        font-family: var(--font-display);
+        letter-spacing: -.01em;
         border-bottom: 1px solid rgba(255, 255, 255, .14);
     }
     .nav__link::after { display: none; }
-    .nav__cta { margin-top: 22px; justify-content: center; }
+    .nav__cta { margin-top: 26px; justify-content: center; font-size: 1rem; }
+
+    /* Links arrive one after another once the panel has landed. */
+    .nav.is-open .nav__list li,
+    .nav.is-open .nav__cta { animation: nav-item .42s var(--ease) both; }
+    .nav.is-open .nav__list li:nth-child(1) { animation-delay: .16s; }
+    .nav.is-open .nav__list li:nth-child(2) { animation-delay: .21s; }
+    .nav.is-open .nav__list li:nth-child(3) { animation-delay: .26s; }
+    .nav.is-open .nav__list li:nth-child(4) { animation-delay: .31s; }
+    .nav.is-open .nav__list li:nth-child(5) { animation-delay: .36s; }
+    .nav.is-open .nav__list li:nth-child(6) { animation-delay: .41s; }
+    .nav.is-open .nav__cta { animation-delay: .48s; }
+
+    /* Set by initChrome while the full-screen menu is open. */
+    body.nav-open { overflow: hidden; }
 
     .hero__inner { grid-template-columns: 1fr; }
     .hero__copy { padding: 44px 24px 38px; }
@@ -2070,7 +2226,33 @@ ul { margin: 0 0 1.1em; padding-left: 1.1em; }
 
     .journey { grid-template-columns: 1fr; gap: 26px; text-align: left; }
     .journey__step { flex-direction: row; align-items: flex-start; gap: 16px; text-align: left; padding: 0; }
-    .journey__step::after { display: none; }
+    /* Stacked, so the route runs down the icon column rather than across.
+       The leg starts 12px below one 64px icon and ends 12px above the next —
+       `bottom: -14px` reaches into the 26px grid gap by exactly that much, so
+       the clearance holds however much the text beside it wraps. */
+    .journey__step::after {
+        top: 76px;
+        bottom: -14px;
+        left: 32px;
+        right: auto;
+        width: 1px;
+        height: auto;
+        background: repeating-linear-gradient(to bottom, var(--gold-300) 0 7px, transparent 7px 13px);
+        transform-origin: center top;
+    }
+    .journey__step::before {
+        top: 76px;
+        bottom: -14px;
+        left: 27.5px;
+        right: auto;
+        width: 9px;
+        height: auto;
+        background-position: center 0;
+    }
+    .journey.is-armed .journey__step::after { transform: scaleY(0); }
+    .journey.is-running .journey__step::after { animation-name: journey-leg-down; }
+    .journey.is-running .journey__step::before { animation-name: journey-marker-down; }
+
     .journey__label { margin-top: 0; }
 
     .member--lead { grid-column: span 1; }
