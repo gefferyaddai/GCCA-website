@@ -196,9 +196,17 @@ function observeReveals(root) {
    ========================================================================== */
 function markImageMissing(img) {
     if (!(img instanceof HTMLImageElement) || img.dataset.failed) return;
+
+    /* An <img> with no src at all is an empty slot waiting to be filled by
+       script — the lightbox works exactly that way — not a file that failed
+       to load. Marking those hides them permanently, because this function
+       sets visibility: hidden and never unsets it. */
+    const src = img.getAttribute('src');
+    if (!src) return;
+
     img.dataset.failed = 'true';
 
-    const file = (img.getAttribute('src') || '').split('/').pop() || 'image';
+    const file = src.split('/').pop() || 'image';
     const holder = img.parentElement;
     if (!holder) return;
 
@@ -1246,6 +1254,137 @@ function initTabs() {
 }
 
 /* ==========================================================================
+   Photo lightbox
+
+   Every tile inside [data-lightbox] opens the same <dialog> full screen.
+   The picture shown is the tile's own <img> at full size — the gallery files
+   are already the full-resolution copies, scaled down by CSS in the grid, so
+   opening one costs no extra download.
+
+   Native <dialog> with showModal(): the browser handles the backdrop, the
+   focus trap and Escape, which is a great deal less to get wrong than a
+   hand-built modal.
+   ========================================================================== */
+function initLightbox() {
+    const gallery = $('[data-lightbox]');
+    const box = $('#lightbox');
+    if (!gallery || !box || typeof box.showModal !== 'function') return;
+
+    const view = $('.lightbox__img', box);
+    const caption = $('[data-lightbox-caption]', box);
+    const tiles = $$('.cf-tile', gallery);
+    if (!tiles.length) return;
+
+    let current = 0;
+
+    const show = (index) => {
+        /* Wraps both ways, so the arrows never dead-end. */
+        current = (index + tiles.length) % tiles.length;
+        const img = tiles[current].querySelector('img');
+        if (!img) return;
+        view.src = img.currentSrc || img.src;
+        view.alt = img.alt || '';
+        caption.textContent = img.alt || '';
+    };
+
+    tiles.forEach((tile, i) => {
+        tile.addEventListener('click', () => {
+            show(i);
+            box.showModal();
+        });
+    });
+
+    /* True full screen — the dialog already covers the viewport, this takes
+       the browser's own chrome out of the way as well. Feature-detected:
+       iOS Safari has no Element.requestFullscreen, so there the button is
+       simply not shown and the viewer behaves exactly as before. */
+    const fullBtn = $('[data-lightbox-full]', box);
+    const canFullscreen = !!(box.requestFullscreen || box.webkitRequestFullscreen);
+
+    if (!canFullscreen) {
+        fullBtn.hidden = true;
+    } else {
+        const icon = fullBtn.querySelector('use');
+
+        const syncFullBtn = () => {
+            const on = document.fullscreenElement === box;
+            icon.setAttribute('href', on ? '#i-collapse' : '#i-expand');
+            fullBtn.setAttribute('aria-label', on ? 'Exit full screen' : 'View full screen');
+        };
+
+        fullBtn.addEventListener('click', () => {
+            if (document.fullscreenElement === box) document.exitFullscreen();
+            else (box.requestFullscreen || box.webkitRequestFullscreen).call(box);
+        });
+
+        document.addEventListener('fullscreenchange', syncFullBtn);
+
+        /* Closing while still full screen would leave the browser stuck there
+           with the page behind it. */
+        box.addEventListener('close', () => {
+            if (document.fullscreenElement === box) document.exitFullscreen();
+        });
+    }
+
+    $('[data-lightbox-close]', box).addEventListener('click', () => box.close());
+    $('[data-lightbox-prev]', box).addEventListener('click', () => show(current - 1));
+    $('[data-lightbox-next]', box).addEventListener('click', () => show(current + 1));
+
+    box.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); show(current - 1); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); show(current + 1); }
+    });
+
+    /* Clicking the empty space around the photo closes it. The photo itself
+       and the three buttons are excluded, or the viewer would shut whenever
+       someone reached for Next. */
+    box.addEventListener('click', (e) => {
+        if (e.target.closest('.lightbox__img, .lightbox__close, .lightbox__nav, .lightbox__full')) return;
+        box.close();
+    });
+
+    /* Send focus back to the tile the visitor opened, not to the top of the
+       page — otherwise closing the viewer loses their place in the grid. */
+    box.addEventListener('close', () => {
+        view.removeAttribute('src');
+        tiles[current].focus();
+    });
+}
+
+/* ==========================================================================
+   Click-to-load video
+
+   The page ships a poster and a play button. Only when someone presses it do
+   we build the YouTube iframe — so a visitor who never watches the video
+   never talks to Google at all, and the page keeps its own load time.
+
+   youtube-nocookie.com, and rel=0 so the panel of suggestions at the end
+   stays inside the channel rather than offering whatever YouTube likes.
+   ========================================================================== */
+function initVideoFacades() {
+    $$('.vidfacade').forEach(facade => {
+        facade.addEventListener('click', () => {
+            const id = facade.getAttribute('data-video');
+            if (!id) return;
+
+            const frame = document.createElement('iframe');
+            frame.src = 'https://www.youtube-nocookie.com/embed/'
+                + encodeURIComponent(id) + '?autoplay=1&rel=0';
+            frame.title = facade.getAttribute('aria-label') || 'Video';
+            frame.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
+            frame.allowFullscreen = true;
+            frame.referrerPolicy = 'strict-origin-when-cross-origin';
+
+            /* The button is replaced outright rather than filled: a button
+               that still wrapped the player would swallow the clicks meant
+               for YouTube's own controls. */
+            facade.replaceWith(frame);
+            frame.focus();
+        }, { once: true });
+    });
+}
+
+/* ==========================================================================
    From Guyana to Calgary
 
    Runs the route once, the first time the row comes into view. All of the
@@ -1540,6 +1679,8 @@ function init() {
     initDocContents();
     initPrintButtons();
     initNews();
+    initVideoFacades();
+    initLightbox();
     initJourney();
     initPhotoStrip();
     initScrollMotion();
