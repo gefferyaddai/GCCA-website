@@ -37,6 +37,7 @@
   <symbol id="i-facebook" viewBox="0 0 24 24"><path fill="currentColor" d="M13.6 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.1v2.3H7.6V13h2.8v8h3.2Z"/></symbol>
   <symbol id="i-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.6 4.6 4.5L19 7"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8.4 5.3a1 1 0 0 1 1.52-.85l8.3 5.2a1.6 1.6 0 0 1 0 2.7l-8.3 5.2a1 1 0 0 1-1.52-.85V5.3Z"/></symbol>
   <!-- The flag proper: 2:1 panel, red-white-red, leaf in the centre band. -->
   <symbol id="i-canada-flag" viewBox="0 0 24 24"><rect y="6" width="24" height="12" fill="#fff"/><path fill="#D80621" d="M0 6h6v12H0zm18 0h6v12h-6z"/><g transform="translate(6 6.3) scale(.5)"><path fill="#D80621" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></g></symbol>
   <symbol id="i-maple" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2.2 1.5 3a.6.6 0 0 0 .7.3l1.6-.4-.6 2.9a.6.6 0 0 0 .9.6l3-1.9-.8 2.3a.6.6 0 0 0 .2.7l3.2 2.4-3.5 1.6a.6.6 0 0 0-.3.7l.6 2.2-4-.7a.6.6 0 0 0-.7.6l.2 4.3h-1.6l.2-4.3a.6.6 0 0 0-.7-.6l-4 .7.6-2.2a.6.6 0 0 0-.3-.7L4.7 12l3.2-2.4a.6.6 0 0 0 .2-.7l-.8-2.3 3 1.9a.6.6 0 0 0 .9-.6l-.6-2.9 1.6.4a.6.6 0 0 0 .7-.3l1.5-3Z"/></symbol>
@@ -119,7 +120,7 @@
         <div>
           <span class="eyebrow">June 2026 – May 2027 season</span>
           <h2 class="section-title" style="margin-bottom:.2em">Upcoming Events</h2>
-          <p class="section-intro" style="margin-bottom:0">Everyone is welcome at our events, apart from the few marked <b>(Members only)</b>. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
+          <p class="section-intro">Everyone is welcome at our events, apart from the few marked <b>(Members only)</b>. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
         </div>
         <a class="link-arrow" href="#register">Register now
           <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
@@ -150,13 +151,77 @@
         <div>
           <span class="eyebrow eyebrow--gold">The archive</span>
           <h2 class="section-title" style="margin-bottom:.2em">Past events</h2>
-          <p class="section-intro" style="margin-bottom:0">Thanks to everyone who came out. Photos from these go up on our social channels.</p>
+          <p class="section-intro">Thanks to everyone who came out. Photos from these go up on our social channels.</p>
         </div>
       </div>
       <div class="card-grid card-grid--3" id="pastList"></div>
       <p style="margin-top:26px">
         <button class="btn btn--ghost" type="button" id="pastToggle" hidden>Show all past events</button>
       </p>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       A look into Carifest
+
+       The video is not ours — it is a walking tour of the festival by another
+       Calgary channel, credited under the player. It is here because nothing
+       we could write conveys the noise and the colour of the route.
+
+       Loaded on click, never on page load. See .vidfacade in the stylesheet.
+       ======================================================== -->
+  <section class="section section--paper section--edge" id="carifest-video">
+    <div class="shell">
+      <div class="vidsplit">
+
+        <div class="vidsplit__left">
+          <div class="vidsplit__head reveal">
+            <span class="eyebrow eyebrow--gold">Carifest</span>
+            <h2 class="section-title">A look into Carifest.</h2>
+          </div>
+
+          <div class="reveal" data-delay="1">
+            <div class="vidframe">
+              <button class="vidfacade" type="button"
+                      data-video="nmHIZLlJGXU"
+                      aria-label="Play: a walk through Carifest Calgary (loads the YouTube player)">
+                <!-- The video's own thumbnail, served by YouTube. Hotlinked
+                     rather than copied into assets/, so it is one third-party
+                     request on load; if YouTube ever drops the video the
+                     poster goes with it. -->
+                <img src="https://i.ytimg.com/vi/nmHIZLlJGXU/maxresdefault.jpg"
+                     alt="A walk through the Carifest Calgary parade"
+                     width="1280" height="720" loading="lazy"
+                     referrerpolicy="no-referrer">
+                <span class="vidfacade__play" aria-hidden="true">
+                  <span><svg width="30" height="30"><use href="#i-play"/></svg></span>
+                </span>
+              </button>
+            </div>
+            <!-- The direct link is not only a courtesy: the play button needs
+                 JavaScript, and this does not. -->
+            <p class="vidsplit__credit">
+              Video by <a href="https://www.youtube.com/@Calgary4KWalkingTours" target="_blank" rel="noopener">Calgary 4K Walking Tours</a> &mdash;
+              <a href="https://www.youtube.com/watch?v=nmHIZLlJGXU" target="_blank" rel="noopener">watch it on YouTube</a>.
+            </p>
+          </div>
+        </div>
+
+        <div class="vidsplit__copy reveal" data-delay="2">
+          <p class="lede">Steel pan, soca, and costumes built over months of evenings &mdash; Carifest is the loudest day in Calgary&rsquo;s Caribbean calendar, and GCCA walks it as one band.</p>
+
+          <p>Every summer the parade takes over a stretch of the city centre &mdash; flags from across the region, trucks rolling through with the sound systems, food tents running until the music stops. Our members walk it together, at every age: grandparents on the route beside grandchildren in their first headdress.</p>
+
+          <p>The 2026 parade runs from Cowboys Park, 12:30pm to 2:30pm. Registering covers your costume &mdash; $50 for adults, $30 for youth &mdash; and the association handles the rest: the build, the transport, and getting everybody lined up on the day.</p>
+
+          <p class="link-row">
+            <a class="link-arrow" href="carifest.html">Learn more about Carifest
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
+            </a>
+          </p>
+        </div>
+
+      </div>
     </div>
   </section>
 
@@ -169,7 +234,7 @@
         <div>
           <span class="eyebrow">Registration &amp; tickets</span>
           <h2 class="section-title">Save your seat.</h2>
-          <p class="section-intro" style="margin-bottom:0">Register once and we'll email your confirmation. Free events just need an RSVP so we know how much food to cook — for ticketed events the executive will confirm your spot and how to pay.</p>
+          <p class="section-intro">Register once and we'll email your confirmation. Free events just need an RSVP so we know how much food to cook — for ticketed events the executive will confirm your spot and how to pay.</p>
         </div>
       </div>
 
@@ -376,8 +441,8 @@
     <p class="footer__support">Supported in part by Alberta Gaming, Liquor &amp; Cannabis (AGLC) &ndash; Charitable Gaming Program</p>
 
     <div class="footer__bar">
-      <p style="margin:0">&copy; <span data-year>2026</span> Guyana Canada Cultural Association (Calgary). All rights reserved.</p>
-      <p style="margin:0">One People, One Nation, One Destiny.</p>
+      <p>&copy; <span data-year>2026</span> Guyana Canada Cultural Association (Calgary). All rights reserved.</p>
+      <p>One People, One Nation, One Destiny.</p>
     </div>
   </div>
   <div class="footer__flagline" aria-hidden="true"></div>
