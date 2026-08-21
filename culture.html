@@ -32,6 +32,12 @@
   <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5" width="18.4" height="14" rx="2.5"/><path d="m3.6 6.8 8.4 6 8.4-6"/></symbol>
   <symbol id="i-bowl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 11h17.2a8.6 8.6 0 0 1-17.2 0Z"/><path d="M8 8c0-1.4 1.2-1.8 1.2-2.9S8 3.2 8 3.2M12 8c0-1.4 1.2-1.8 1.2-2.9S12 3.2 12 3.2M16 8c0-1.4 1.2-1.8 1.2-2.9S16 3.2 16 3.2"/></symbol>
   <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.2V6l11-2v12"/><circle cx="6.4" cy="18.2" r="2.6"/><circle cx="17.4" cy="16" r="2.6"/></symbol>
+  <!-- Speaker with two arcs; the arcs are separate paths so the playing
+       state can animate them outward one after the other. -->
+  <symbol id="i-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4z"/><path class="spk-wave spk-wave--near" d="M15.4 9.8a3.4 3.4 0 0 1 0 4.4"/><path class="spk-wave spk-wave--far" d="M18.1 7.4a7 7 0 0 1 0 9.2"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 9 7 7 7-7"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4z"/><path d="M15.4 9.8a3.4 3.4 0 0 1 0 4.4"/><path d="M18.1 7.4a7 7 0 0 1 0 9.2"/></symbol>
+  <symbol id="i-volume-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4z"/><path d="m16 9.6 5 5m0-5-5 5"/></symbol>
   <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 21.5V3"/><path d="M5.5 4.2h11.8l-2.2 3.9 2.2 3.9H5.5"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h5.4A2.6 2.6 0 0 1 12 7.1v12.4a2 2 0 0 0-2-1.9H4V4.5Z"/><path d="M20 4.5h-5.4A2.6 2.6 0 0 0 12 7.1v12.4a2 2 0 0 1 2-1.9h6V4.5Z"/></symbol>
   <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 3.2 15.7 4l2.1 3.6-1.4 3 1.9 2.7-2.6 3-1.2 4.4-3.3-1.7-2.3-4.4 1.4-2.6-2.9-2.4.7-3.1-1.9-1.6 1.6-1.7Z"/></symbol>
@@ -81,7 +87,6 @@
   <section class="hero">
     <div class="hero__inner">
       <div class="hero__copy">
-        <span class="eyebrow">Guyanese culture</span>
         <h1 class="hero__title">A heritage rich in rhythm, flavour, and tradition.</h1>
         <p class="lede">Discover the traditions, stories, and experiences that connect Guyanese people across generations and across borders.</p>
       </div>
@@ -158,7 +163,6 @@
   <section class="section section--band" id="where-it-comes-from">
     <div class="shell split">
       <div class="reveal">
-        <span class="eyebrow">Where it comes from</span>
         <h2 class="section-title">Six peoples, one nation.</h2>
         <p>Guyana sits on the northern shoulder of South America, but its heart beats Caribbean. Its culture was built by Indigenous nations who have been there for millennia, by Africans brought in chains, by Indian and Chinese indentured labourers, by Portuguese from Madeira, and by Europeans — each arriving with their own food, faith, music and language.</p>
         <p>What makes Guyana unusual is how thoroughly those traditions blended. A single Christmas table can carry an Indigenous stew, a Portuguese pork dish, and an Indian curry, and nobody thinks twice about it. That is what the national motto means in practice.</p>
@@ -174,7 +178,6 @@
 
       <div class="reveal" data-delay="1">
         <div class="form-card">
-          <span class="eyebrow eyebrow--gold">Reading the Golden Arrowhead</span>
           <h3 style="margin-bottom:1rem">Every colour on the flag means something.</h3>
           <svg viewBox="0 0 300 180" style="width:100%;border-radius:6px;box-shadow:var(--shadow-sm)" role="img" aria-label="The flag of Guyana, known as the Golden Arrowhead">
             <rect width="300" height="180" fill="#009E49"/>
@@ -200,7 +203,6 @@
        ======================================================== -->
   <section class="section section--flag section--flag-br" id="explore">
     <div class="shell">
-      <span class="eyebrow">Go deeper</span>
       <h2 class="section-title">The details worth knowing.</h2>
       <p class="section-intro">Pick a thread.</p>
 
@@ -289,42 +291,172 @@
        ======================================================== -->
   <section class="section section--band">
     <div class="shell">
-      <span class="eyebrow">Talk the talk</span>
       <h2 class="section-title">A little Creolese to get you started.</h2>
       <p class="section-intro">Say one of these at the next event and watch somebody's face light up.</p>
+
+      <!-- One volume setting for every clip in this section, remembered
+           between visits. Hidden until the script runs — a slider that
+           controls nothing is worse than no slider. -->
+      <div class="say-volume" hidden>
+        <button class="say-volume__mute" type="button" aria-pressed="false" aria-label="Mute pronunciation clips">
+          <svg width="18" height="18" aria-hidden="true"><use href="#i-volume"/></svg>
+        </button>
+        <input class="say-volume__slider" type="range" min="0" max="1" step="0.05" value="0.35"
+               aria-label="Volume for pronunciation clips">
+      </div>
 
       <div class="glossary reveal">
         <div class="glossary__item">
           <p class="glossary__term">Lime</p>
           <p class="glossary__def">To hang out with no particular agenda. The highest form of social activity.</p>
+          <div class="say-row" data-word="Lime">
+            <button class="say" type="button" data-say="assets/audios/lime-audio.mp3"
+                    aria-label="Hear &ldquo;Lime&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/lime-audio.mp3"
+                    aria-label="Hear &ldquo;Lime&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-lime"
+                    aria-label="Show full player for &ldquo;Lime&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-lime" src="assets/audios/lime-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Gaff</p>
           <p class="glossary__def">A long, easy conversation. "We gaff till midnight."</p>
+          <div class="say-row" data-word="Gaff">
+            <button class="say" type="button" data-say="assets/audios/gaff-audio.mp3"
+                    aria-label="Hear &ldquo;Gaff&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/gaff-audio.mp3"
+                    aria-label="Hear &ldquo;Gaff&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-gaff"
+                    aria-label="Show full player for &ldquo;Gaff&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-gaff" src="assets/audios/gaff-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Banna</p>
           <p class="glossary__def">Friend, mate, buddy. Used constantly, affectionately.</p>
+          <div class="say-row" data-word="Banna">
+            <button class="say" type="button" data-say="assets/audios/banna-audio.mp3"
+                    aria-label="Hear &ldquo;Banna&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/banna-audio.mp3"
+                    aria-label="Hear &ldquo;Banna&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-banna"
+                    aria-label="Show full player for &ldquo;Banna&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-banna" src="assets/audios/banna-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Nyam</p>
           <p class="glossary__def">To eat, with West African roots. Usually said about eating well.</p>
+          <div class="say-row" data-word="Nyam">
+            <button class="say" type="button" data-say="assets/audios/nyam-audio.mp3"
+                    aria-label="Hear &ldquo;Nyam&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/nyam-audio.mp3"
+                    aria-label="Hear &ldquo;Nyam&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-nyam"
+                    aria-label="Show full player for &ldquo;Nyam&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-nyam" src="assets/audios/nyam-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Small up yuhself</p>
           <p class="glossary__def">Budge over and make room — there's always space for one more.</p>
+          <div class="say-row" data-word="Small up yuhself">
+            <button class="say" type="button" data-say="assets/audios/smallupyuhself.mp3"
+                    aria-label="Hear &ldquo;Small up yuhself&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/smallupyuhself.mp3"
+                    aria-label="Hear &ldquo;Small up yuhself&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-small-up-yuhself"
+                    aria-label="Show full player for &ldquo;Small up yuhself&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-small-up-yuhself" src="assets/audios/smallupyuhself.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Hard ears</p>
           <p class="glossary__def">Stubborn; won't listen. Most often said to children.</p>
+          <div class="say-row" data-word="Hard ears">
+            <button class="say" type="button" data-say="assets/audios/hardears-audio.mp3"
+                    aria-label="Hear &ldquo;Hard ears&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/hardears-audio.mp3"
+                    aria-label="Hear &ldquo;Hard ears&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-hard-ears"
+                    aria-label="Show full player for &ldquo;Hard ears&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-hard-ears" src="assets/audios/hardears-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">Eye-pass</p>
           <p class="glossary__def">A slight, or being disrespected to your face.</p>
+          <div class="say-row" data-word="Eye-pass">
+            <button class="say" type="button" data-say="assets/audios/eye-pass-audio.mp3"
+                    aria-label="Hear &ldquo;Eye-pass&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/eye-pass-audio.mp3"
+                    aria-label="Hear &ldquo;Eye-pass&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-eye-pass"
+                    aria-label="Show full player for &ldquo;Eye-pass&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-eye-pass" src="assets/audios/eye-pass-audio.mp3" controls preload="none" hidden></audio>
         </div>
         <div class="glossary__item">
           <p class="glossary__term">One one dutty build dam</p>
           <p class="glossary__def">Grain by grain, the dam gets built. Small efforts add up.</p>
+          <div class="say-row" data-word="One one dutty build dam">
+            <button class="say" type="button" data-say="assets/audios/one-one-dutty-audio.mp3"
+                    aria-label="Hear &ldquo;One one dutty build dam&rdquo; spoken">
+              <span class="say__ring" aria-hidden="true"></span>
+              <svg width="17" height="17" aria-hidden="true"><use href="#i-speaker"/></svg>
+            </button>
+            <button class="say-slow" type="button" data-say-slow="assets/audios/one-one-dutty-audio.mp3"
+                    aria-label="Hear &ldquo;One one dutty build dam&rdquo; slowly">0.7&times;</button>
+            <button class="say-more" type="button" aria-expanded="false"
+                    aria-controls="aud-one-one-dutty-build-dam"
+                    aria-label="Show full player for &ldquo;One one dutty build dam&rdquo;">
+              <svg width="15" height="15" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+          </div>
+          <audio class="say-player" id="aud-one-one-dutty-build-dam" src="assets/audios/one-one-dutty-audio.mp3" controls preload="none" hidden></audio>
         </div>
       </div>
     </div>
@@ -338,7 +470,6 @@
       <img src="assets/kaieteur-falls.jpg" alt="" width="1200" height="800" loading="lazy">
     </div>
     <div class="shell banner__inner">
-      <span class="eyebrow eyebrow--gold">Land of many waters</span>
       <h2>Kaieteur, the Essequibo, and a forest bigger than England.</h2>
       <p>Guyana's name comes from an Indigenous word meaning <em>land of many waters</em>, and the country lives up to it. Kaieteur Falls drops 226 metres — 741 feet — in one unbroken sheet on the Potaro River, deep in rainforest that covers most of the country. The Essequibo runs the length of it. Inland, the Rupununi savannah opens out toward Mount Roraima's tabletop.</p>
       <div class="banner__stats">

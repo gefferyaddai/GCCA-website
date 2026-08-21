@@ -1368,8 +1368,11 @@ function initVideoFacades() {
             if (!id) return;
 
             const frame = document.createElement('iframe');
+            /* enablejsapi lets us post a pause command to the player when it
+               scrolls out of view. It costs nothing — no YouTube script is
+               loaded, we just talk to the iframe that is already here. */
             frame.src = 'https://www.youtube-nocookie.com/embed/'
-                + encodeURIComponent(id) + '?autoplay=1&rel=0';
+                + encodeURIComponent(id) + '?autoplay=1&rel=0&enablejsapi=1';
             frame.title = facade.getAttribute('aria-label') || 'Video';
             frame.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
             frame.allowFullscreen = true;
@@ -1380,7 +1383,264 @@ function initVideoFacades() {
                for YouTube's own controls. */
             facade.replaceWith(frame);
             frame.focus();
+            watchVideo(frame);
         }, { once: true });
+    });
+}
+
+/* ==========================================================================
+   Hear it said — Creolese pronunciation
+
+   One shared Audio object rather than one per word. Two reasons: pressing a
+   second button should interrupt the first rather than talk over it, and a
+   page with eight <audio> elements pre-loads eight files nobody asked for.
+   Nothing is fetched until a button is pressed.
+   ========================================================================== */
+function initSayIt() {
+    const buttons = $$('[data-say]');
+    if (!buttons.length) return;
+
+    const SLOW = 0.7;
+    const VOL_KEY = 'gcca.say.volume';
+    const MUTE_KEY = 'gcca.say.muted';
+
+    const player = new Audio();
+    const players = $$('.say-player');      /* the browser's own players */
+    let current = null;                     /* button driving the shared player */
+    let stallTimer = null;
+    let frame = null;
+
+    /* ---- volume, shared by the compact buttons and the full players ---- */
+    const store = (key, value) => {
+        try { localStorage.setItem(key, value); } catch (e) { /* private mode */ }
+    };
+    const recall = (key) => {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+    };
+
+    /* Clips start at a third of full volume. Someone reading a glossary is
+       not expecting sound at all, and a voice at 100% out of nowhere makes
+       people close the tab rather than press the next word. They can turn it
+       up, and that choice is remembered.
+
+       Read with an explicit isFinite check rather than `|| DEFAULT`: a stored
+       volume of exactly 0 is falsy, so the shorter form would silently undo
+       someone deliberately turning the sound all the way down. */
+    const DEFAULT_VOLUME = 0.35;
+    const saved = parseFloat(recall(VOL_KEY));
+    let volume = isFinite(saved) ? Math.min(1, Math.max(0, saved)) : DEFAULT_VOLUME;
+    let muted = recall(MUTE_KEY) === '1';
+
+    const applyVolume = () => {
+        player.volume = volume;
+        player.muted = muted;
+        players.forEach(el => { el.volume = volume; el.muted = muted; });
+    };
+
+    /* ---- the progress ring ---- */
+    const drawRing = () => {
+        if (!current) return;
+        const through = player.duration ? player.currentTime / player.duration : 0;
+        current.style.setProperty('--p', String(Math.min(1, through)));
+        frame = window.requestAnimationFrame(drawRing);
+    };
+    const stopRing = () => {
+        if (frame) window.cancelAnimationFrame(frame);
+        frame = null;
+        if (current) current.style.setProperty('--p', '0');
+    };
+
+    const clear = () => {
+        clearTimeout(stallTimer);
+        stopRing();
+        if (current) {
+            current.removeAttribute('data-playing');
+            const row = current.closest('.say-row');
+            if (row) $$('.say-slow', row).forEach(b => b.removeAttribute('data-playing'));
+        }
+        current = null;
+    };
+
+    const fail = () => {
+        const button = current;
+        clear();
+        if (button) {
+            button.setAttribute('data-error', '');
+            button.setAttribute('title', 'Sorry — that recording could not be played.');
+        }
+    };
+
+    player.addEventListener('ended', clear);
+    player.addEventListener('pause', clear);
+    player.addEventListener('error', fail);
+    player.addEventListener('playing', () => clearTimeout(stallTimer));
+
+    /* Only one thing makes noise at a time, whichever control started it. */
+    const silenceEverythingElse = (except) => {
+        players.forEach(el => { if (el !== except && !el.paused) el.pause(); });
+        if (except !== player && !player.paused) player.pause();
+    };
+
+    const play = (src, rate, button, slowButton) => {
+        if (current === button && player.playbackRate === rate && !player.paused) {
+            player.pause();
+            return;
+        }
+
+        silenceEverythingElse(player);
+        clear();
+        button.removeAttribute('data-error');
+        button.removeAttribute('title');
+        current = button;
+        button.setAttribute('data-playing', '');
+        if (slowButton) slowButton.setAttribute('data-playing', '');
+
+        player.src = src;
+        player.currentTime = 0;
+        player.playbackRate = rate;
+        /* Keep the voice at its natural pitch when slowed — without this a
+           0.7x replay sounds like a different, deeper person, which is no
+           use to anyone trying to learn how a word is said. */
+        if ('preservesPitch' in player) player.preservesPitch = true;
+        if ('webkitPreservesPitch' in player) player.webkitPreservesPitch = true;
+        applyVolume();
+
+        clearTimeout(stallTimer);
+        stallTimer = setTimeout(fail, 6000);
+
+        const started = player.play();
+        if (started && typeof started.catch === 'function') started.catch(fail);
+        stopRing();
+        frame = window.requestAnimationFrame(drawRing);
+    };
+
+    buttons.forEach(button => {
+        const row = button.closest('.say-row');
+        const slow = row ? $('.say-slow', row) : null;
+        button.addEventListener('click', () => play(button.getAttribute('data-say'), 1, button, null));
+        if (slow) {
+            slow.addEventListener('click', () =>
+                play(slow.getAttribute('data-say-slow'), SLOW, button, slow));
+        }
+    });
+
+    /* ---- the full player, revealed per word ---- */
+    $$('.say-more').forEach(toggle => {
+        const panel = document.getElementById(toggle.getAttribute('aria-controls'));
+        if (!panel) return;
+        toggle.addEventListener('click', () => {
+            const open = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!open));
+            panel.hidden = open;
+            if (!open) { panel.volume = volume; panel.muted = muted; }
+            else if (!panel.paused) panel.pause();
+        });
+    });
+
+    /* Starting a full player silences the compact one, and vice versa. */
+    players.forEach(el => {
+        el.addEventListener('play', () => silenceEverythingElse(el));
+    });
+
+    /* ---- volume control ---- */
+    const bar = $('.say-volume');
+    if (bar) {
+        const slider = $('.say-volume__slider', bar);
+        const mute = $('.say-volume__mute', bar);
+        const icon = mute.querySelector('use');
+
+        const sync = () => {
+            slider.value = String(volume);
+            mute.setAttribute('aria-pressed', String(muted));
+            mute.setAttribute('aria-label', muted ? 'Unmute pronunciation clips' : 'Mute pronunciation clips');
+            icon.setAttribute('href', (muted || volume === 0) ? '#i-volume-off' : '#i-volume');
+            applyVolume();
+        };
+
+        slider.addEventListener('input', () => {
+            volume = Number(slider.value);
+            if (volume > 0) muted = false;
+            store(VOL_KEY, String(volume));
+            store(MUTE_KEY, muted ? '1' : '0');
+            sync();
+        });
+
+        mute.addEventListener('click', () => {
+            muted = !muted;
+            store(MUTE_KEY, muted ? '1' : '0');
+            sync();
+        });
+
+        bar.hidden = false;   /* only now is it a control rather than decoration */
+        sync();
+    } else {
+        applyVolume();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'hidden') return;
+        player.pause();
+        players.forEach(el => el.pause());
+    });
+}
+
+/* ==========================================================================
+   Stop video that has scrolled away
+
+   Sound coming from a player the visitor can no longer see is the web at
+   its most irritating — they end up hunting the tab for the source. Once a
+   video is mostly off screen it pauses. It does not resume on the way back:
+   restarting audio nobody asked for a second time is the same rudeness.
+
+   Two kinds of player need two mechanisms:
+
+   - our own <video> elements just get .pause();
+   - a YouTube embed is a cross-origin document we cannot touch directly, so
+     we post it the pause command its iframe API already understands. That
+     needs `enablejsapi=1` on the embed URL, which initVideoFacades sets, and
+     it loads none of YouTube's own JavaScript.
+   ========================================================================== */
+const YT_ORIGIN = 'https://www.youtube-nocookie.com';
+let videoWatcher = null;
+
+function pauseVideoElement(el) {
+    if (el.tagName === 'VIDEO') {
+        if (!el.paused) el.pause();
+        return;
+    }
+    /* Targeted at YouTube's origin rather than '*', so the message is not
+       broadcast to whatever else might be listening. */
+    if (el.contentWindow) {
+        el.contentWindow.postMessage(
+            JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+            YT_ORIGIN
+        );
+    }
+}
+
+function watchVideo(el) {
+    if (videoWatcher) videoWatcher.observe(el);
+}
+
+function initVideoAutoPause() {
+    if (!('IntersectionObserver' in window)) return;
+
+    /* A quarter visible still counts as watching — someone reading the copy
+       beside a tall player should not have it cut out on them. Below that
+       they have moved on. */
+    videoWatcher = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) pauseVideoElement(entry.target);
+        });
+    }, { threshold: 0.25 });
+
+    $$('video').forEach(el => videoWatcher.observe(el));
+
+    /* Leaving the tab should stop it too. Browsers pause <video> on their
+       own here, but an embedded player keeps going. */
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'hidden') return;
+        $$('video, .vidframe iframe, .feature-split__media iframe').forEach(pauseVideoElement);
     });
 }
 
@@ -1443,6 +1703,40 @@ function initPhotoStrip() {
             const copy = item.cloneNode(true);
             copy.setAttribute('aria-hidden', 'true');
             track.appendChild(copy);
+        });
+    });
+
+    pauseStripsOffscreen();
+}
+
+/* A marquee that keeps running after it has scrolled past is work the
+   browser does for nobody — it costs battery on a phone and it is the kind
+   of thing that makes a page feel heavy without anyone being able to say
+   why. Each band stops when it leaves the viewport and picks up where it
+   left off when it comes back. */
+function pauseStripsOffscreen() {
+    const strips = $$('[data-strip]');
+    if (!strips.length || !('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            entry.target.toggleAttribute('data-paused', !entry.isIntersecting);
+        });
+    }, { rootMargin: '120px 0px' });
+
+    strips.forEach(strip => observer.observe(strip));
+
+    /* Switching tabs should stop them too — a background tab still runs CSS
+       animations in some browsers. */
+    document.addEventListener('visibilitychange', () => {
+        const hidden = document.visibilityState === 'hidden';
+        strips.forEach(strip => {
+            if (hidden) strip.setAttribute('data-paused', '');
+            /* On return, the observer's own state is authoritative, so only
+               clear the flag for bands that are actually on screen. */
+            else if (strip.getBoundingClientRect().top < window.innerHeight) {
+                strip.removeAttribute('data-paused');
+            }
         });
     });
 }
@@ -1661,6 +1955,7 @@ function initPrintButtons() {
     }
 }
 
+
 /* ==========================================================================
    Boot
    ========================================================================== */
@@ -1679,6 +1974,10 @@ function init() {
     initDocContents();
     initPrintButtons();
     initNews();
+    /* Before initVideoFacades, so the observer exists when a facade swaps
+       itself for a player and calls watchVideo(). */
+    initVideoAutoPause();
+    initSayIt();
     initVideoFacades();
     initLightbox();
     initJourney();

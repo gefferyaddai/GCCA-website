@@ -36,6 +36,7 @@
     <g id="i-base" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></g>
   </defs>
   <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8.4 5.3a1 1 0 0 1 1.52-.85l8.3 5.2a1.6 1.6 0 0 1 0 2.7l-8.3 5.2a1 1 0 0 1-1.52-.85V5.3Z"/></symbol>
   <symbol id="i-community" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2.5 19.5a6.5 6.5 0 0 1 13 0"/><path d="M16.6 6.1a2.9 2.9 0 0 1 0 5.6"/><path d="M17.4 14.2a5.4 5.4 0 0 1 4.1 4.6"/></symbol>
   <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9.5"/><path d="M12 11.5c0-4.1 2.7-7.2 7.2-7.2 0 4.6-2.9 7.2-7.2 7.2Z"/><path d="M12 15.5c-3.5 0-5.9-2.3-5.9-5.8 3.8 0 5.9 2.3 5.9 5.8Z"/></symbol>
   <symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 8.6 6.4 5.5l3.4 2.4h4.4l3.4-2.4 3.6 3.1"/><path d="M2.8 8.6v4.8l4.4 4.2 2.3-2 2 1.7 2.2-1.9 2.6 2.2 4.9-4.2V8.6"/><path d="M9.8 7.9 12 10.1l2.2-2.2"/></symbol>
@@ -172,13 +173,33 @@
   <!-- ========================================================
        Who we are
        ======================================================== -->
-  <section class="section">
-    <div class="shell split split--wide-right">
-      <div class="split__media reveal">
-        <img src="assets/about-gathering.jpg" alt="Community members seated outdoors listening to speakers at a Guyanese flag-raising ceremony" width="768" height="512" loading="lazy">
+  <!-- Media panel left, copy right. The panel runs to the left edge of the
+       window and the full height of the copy beside it — the inverse of the
+       hero, which puts the words on the left and the picture on the right. -->
+  <section class="feature-split">
+    <!-- Click-to-load, same as the Carifest player: nothing is requested from
+         YouTube until someone presses play. The poster is YouTube's own
+         thumbnail for the video, hotlinked. -->
+    <div class="feature-split__media">
+      <div class="vidframe vidframe--fill">
+        <button class="vidfacade" type="button"
+                data-video="HoaGF_bLojc"
+                aria-label="Play: Guyana explained in fifteen minutes — history, geography and culture">
+          <img src="https://i.ytimg.com/vi/HoaGF_bLojc/maxresdefault.jpg"
+               alt="Guyana explained in fifteen minutes — history, geography and culture"
+               width="1280" height="720" loading="lazy" referrerpolicy="no-referrer">
+          <span class="vidfacade__play" aria-hidden="true">
+            <span><svg width="34" height="34"><use href="#i-play"/></svg></span>
+          </span>
+        </button>
       </div>
-      <div class="reveal" data-delay="1">
-        <span class="eyebrow">Who we are</span>
+      <p class="feature-split__credit">
+        <a href="https://www.youtube.com/watch?v=HoaGF_bLojc" target="_blank" rel="noopener">Guyana Explained in 15 Minutes</a>
+        &mdash; by <a href="https://www.youtube.com/@opentiera" target="_blank" rel="noopener">Opentiera</a>
+      </p>
+    </div>
+    <div class="feature-split__copy">
+      <div class="reveal">
         <h2 class="section-title">A little piece of home, six thousand kilometres away.</h2>
         <p>Founded on 25 April 1991, the Guyana Canada Cultural Association (Calgary) is a volunteer-run home for Guyanese people, families, and friends across the city. We host the celebrations that keep our traditions alive, and we show up for each other in between.</p>
         <p>Whether you arrived last month or were born here to Guyanese parents, there is a seat at the table for you.</p>
@@ -207,7 +228,6 @@
       <img src="assets/kaieteur-falls.jpg" alt="" width="1200" height="800" loading="lazy">
     </div>
     <div class="shell banner__inner">
-      <span class="eyebrow eyebrow--gold">The land we come from</span>
       <h2>Where the water falls for 226 metres — 741 feet — without stopping.</h2>
       <p>Kaieteur Falls drops off the Potaro River in a single, uninterrupted sheet — more than four times the height of Niagara, deep inside rainforest that most of the world has never seen. Guyana's name comes from an Indigenous word meaning <em>land of many waters</em>, and its people carry six ancestries under one flag.</p>
       <div class="banner__stats">
@@ -238,7 +258,6 @@
     <div class="shell">
       <div class="section-head">
         <div>
-          <span class="eyebrow">From back home</span>
           <h2 class="section-title">What's making news in Guyana.</h2>
           <p class="section-intro">Headlines from Guyanese newsrooms, updated through the day. Follow any story to read it at the source.</p>
         </div>
@@ -257,7 +276,6 @@
     <div class="shell">
       <div class="section-head">
         <div>
-          <span class="eyebrow">What's coming up</span>
           <h2 class="section-title">Come out and lime with us.</h2>
           <p class="section-intro">Everything we do is open to the wider Calgary community — bring a friend who has never tasted pepperpot.</p>
         </div>
@@ -284,7 +302,6 @@
     <div class="shell">
       <div class="section-head">
         <div>
-          <span class="eyebrow">Life at GCCA</span>
           <h2 class="section-title" style="margin-bottom:.2em">Thirty-five years of turning up for each other.</h2>
         </div>
       </div>
@@ -302,6 +319,24 @@
         <li class="strip__item"><img src="assets/strip/strip-meeting.jpg" alt="Members around the table at a general meeting" width="640" height="480" loading="lazy"></li>
       </ul>
     </div>
+
+    <!-- The return row. It runs the other way and a little slower, so the two
+         bands read as a procession passing rather than one loop repeating.
+         Everything here is decorative: the same eight photographs are already
+         described in the row above, so this row is hidden from assistive
+         technology entirely rather than duplicating eight alt texts. -->
+    <div class="strip strip--reverse" data-strip aria-hidden="true">
+      <ul class="strip__track">
+        <li class="strip__item"><img src="assets/strip/strip-community.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-cake.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-meeting.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-flag-raising.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-volunteer.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-sports.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-christmas.jpg" alt="" width="640" height="480" loading="lazy"></li>
+        <li class="strip__item"><img src="assets/strip/strip-carifest.jpg" alt="" width="640" height="480" loading="lazy"></li>
+      </ul>
+    </div>
   </section>
 
   <!-- ========================================================
@@ -311,7 +346,6 @@
     <div class="shell">
       <div class="section-head">
         <div>
-          <span class="eyebrow">Membership</span>
           <h2 class="section-title">Join the association.</h2>
           <p class="section-intro">Membership runs on our fiscal year, <b>1 May to 30 April</b>, and keeps the association going. Choose the category that fits your household — every member gets a vote, a voice, and a second home in Calgary.</p>
         </div>
@@ -482,7 +516,6 @@
   <section class="section section--band section--flag" id="contact">
     <div class="shell contact-layout">
       <div class="reveal">
-        <span class="eyebrow">Get in touch</span>
         <h2 class="section-title">Questions, ideas, or want to help out?</h2>
         <p>Send us a note and a member of the executive will get back to you, usually within a few days.</p>
 
