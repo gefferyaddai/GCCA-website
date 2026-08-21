@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "<img class=\"lightbox__img\" alt=\"\">",
+        "createdAt": "2026-08-20T20:06:05.708Z",
+        "reason": "assistant: intentional empty slot in carifest.html lightbox dialog; initLightbox() assigns src on tile click and clears it on close. markImageMissing() in js/script.js was hardened to skip src-less images so it is never flagged as a missing asset at runtime."
+      }
+    ]
+  }
+}
