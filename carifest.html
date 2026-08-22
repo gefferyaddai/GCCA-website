@@ -59,14 +59,14 @@
       <span class="visually-hidden">Menu</span>
     </button>
 
-    <!-- No Carifest link here on purpose: this page is reached from the
-         events page, not from the bar. -->
     <nav class="nav" id="primaryNav" aria-label="Primary">
       <ul class="nav__list">
         <li><a class="nav__link" href="index.html">Home</a></li>
         <li><a class="nav__link" href="about.html">About</a></li>
         <li><a class="nav__link" href="events.html">Events</a></li>
         <li><a class="nav__link" href="culture.html">Culture</a></li>
+        <li><a class="nav__link" href="carifest.html" aria-current="page">Carifest</a></li>
+        <li><a class="nav__link" href="news.html">News</a></li>
       </ul>
       <a class="btn btn--primary nav__cta" href="index.html#membership">Become a member</a>
     </nav>
@@ -267,7 +267,7 @@
             </figcaption>
           </figure>
 
-          <figure class="cf-clip reveal" data-delay="3">
+          <figure class="cf-clip cf-clip--wide cf-clip--16x9 reveal" data-delay="3">
             <video controls preload="none" playsinline
                    poster="assets/carifest/parade-dancers-poster.jpg">
               <source src="assets/carifest/parade-dancers.mp4" type="video/mp4">
@@ -304,15 +304,6 @@
     </svg>
   </section>
 
-  <!-- A way back, since this page is not in the navigation bar. -->
-  <section class="section section--tight">
-    <div class="shell">
-      <a class="link-arrow link-arrow--back" href="events.html#carifest-video">
-        <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-        Back to events
-      </a>
-    </div>
-  </section>
 
 </main>
 
@@ -327,11 +318,15 @@
   <button class="lightbox__nav lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous photo">
     <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow-left"/></svg>
   </button>
-  <img class="lightbox__img" alt="">
+  <!-- Starts on a 1x1 transparent pixel rather than no src at all. The script
+       swaps in the real photograph on click and restores this blank on close,
+       so the element is never in the src-less state that reads as a broken
+       image to anything inspecting the markup. The data URI costs no request. -->
+  <img class="lightbox__img" alt=""
+       src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
   <button class="lightbox__nav lightbox__nav--next" type="button" data-lightbox-next aria-label="Next photo">
     <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow"/></svg>
   </button>
-  <p class="lightbox__caption" data-lightbox-caption></p>
 </dialog>
 
 <footer class="site-footer">
@@ -360,6 +355,8 @@
           <li><a href="about.html">About us</a></li>
           <li><a href="events.html">Events</a></li>
           <li><a href="culture.html">Culture</a></li>
+          <li><a href="carifest.html">Carifest</a></li>
+          <li><a href="news.html">News</a></li>
         </ul>
       </div>
       <div>

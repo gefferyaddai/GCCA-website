@@ -52,11 +52,13 @@
     /* Structure */
     --shell:       1200px;
     --gutter:      max(20px, calc((100vw - var(--shell)) / 2));
-    /* Softer corners throughout. 6px reads as "a box with the edge taken
-       off"; 12/22px reads as a considered shape. The jump is deliberate —
-       this is the single change that most moves the site from 2015 to now. */
-    --radius:      12px;
-    --radius-lg:   22px;
+    /* Crisp corners, taken from the design mock: a small, even radius on
+       everything rather than the soft 12/22px this carried briefly. Buttons
+       and chips are rectangles here, not pills — see .btn below. Genuine
+       circles (icon wells, avatars, the speaker buttons) keep their 50% and
+       are unaffected by these tokens. */
+    --radius:      6px;
+    --radius-lg:   10px;
     --radius-pill: 999px;
 
     /* Type */
@@ -284,13 +286,11 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     display: inline-flex;
     align-items: center;
     gap: .7em;
-    /* Fuller and pill-shaped. A rounded rectangle among rounded-rectangle
-       cards disappears; a pill reads unmistakably as "press this". */
-    padding: .92em 1.75em;
+    padding: .92em 1.6em;
     background: var(--btn-bg);
     color: var(--btn-fg);
     border: 1.5px solid var(--btn-bd);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
     font-weight: 600;
     font-size: .96rem;
     letter-spacing: .005em;
@@ -858,7 +858,13 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
    the copy returns to the shell's own gutters. */
 @media (max-width: 940px) {
     .feature-split { grid-template-columns: 1fr; }
-    .feature-split__media { min-height: 0; aspect-ratio: 16 / 10; }
+    /* 16:9, matching the video exactly. At 16:10 the poster was cropped and,
+       worse, the panel was short enough that the play button took 39% of its
+       height and the credit strip another third. */
+    .feature-split__media { min-height: 0; aspect-ratio: 16 / 9; }
+    .feature-split__media .vidfacade__play > span { width: 62px; height: 62px; }
+    .feature-split__media .vidfacade__play svg { width: 24px; height: 24px; }
+    .feature-split__credit { padding: 26px 18px 12px; font-size: .74rem; }
     .feature-split__copy {
         padding: clamp(38px, 7vw, 56px) max(20px, calc((100vw - var(--shell)) / 2));
     }
@@ -1005,7 +1011,7 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     align-items: center;
     gap: 6px;
     padding: .3em .8em;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
     background: var(--green-100);
     color: var(--green-800);
     font-size: .72rem;
@@ -1117,7 +1123,9 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 
    Four stops on a route, so they arrive like one: a stop appears, a marker
    sets off along the dotted leg and draws it in behind itself, and the next
-   stop lands as the marker arrives. About three seconds end to end.
+   stop lands as the marker arrives. Just under two seconds end to end — it
+   ran to three and a half, which is long enough that people scrolled past
+   the end of it.
 
    Two classes rather than one. `is-armed` is added by the script on load and
    is the only thing that hides the stops, so a visitor whose JavaScript never
@@ -1127,22 +1135,22 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 .journey.is-armed .journey__step { opacity: 0; }
 .journey.is-armed .journey__step::after { transform: scaleX(0); }
 
-.journey.is-running .journey__step { animation: journey-stop .55s var(--ease) both; }
-.journey.is-running .journey__step::after { animation: journey-leg .55s linear both; }
-.journey.is-running .journey__step::before { animation: journey-marker .55s linear both; }
+.journey.is-running .journey__step { animation: journey-stop .38s var(--ease) both; }
+.journey.is-running .journey__step::after { animation: journey-leg .34s linear both; }
+.journey.is-running .journey__step::before { animation: journey-marker .34s linear both; }
 
 /* Stop n lands at (n-1) × .9s; the leg out of it sets off .35s after it, so
    the marker is already moving while the stop is still settling. */
-.journey.is-running .journey__step:nth-child(2) { animation-delay: .9s; }
-.journey.is-running .journey__step:nth-child(3) { animation-delay: 1.8s; }
-.journey.is-running .journey__step:nth-child(4) { animation-delay: 2.7s; }
+.journey.is-running .journey__step:nth-child(2) { animation-delay: .5s; }
+.journey.is-running .journey__step:nth-child(3) { animation-delay: 1s; }
+.journey.is-running .journey__step:nth-child(4) { animation-delay: 1.5s; }
 
 .journey.is-running .journey__step:nth-child(1)::after,
-.journey.is-running .journey__step:nth-child(1)::before { animation-delay: .35s; }
+.journey.is-running .journey__step:nth-child(1)::before { animation-delay: .2s; }
 .journey.is-running .journey__step:nth-child(2)::after,
-.journey.is-running .journey__step:nth-child(2)::before { animation-delay: 1.25s; }
+.journey.is-running .journey__step:nth-child(2)::before { animation-delay: .7s; }
 .journey.is-running .journey__step:nth-child(3)::after,
-.journey.is-running .journey__step:nth-child(3)::before { animation-delay: 2.15s; }
+.journey.is-running .journey__step:nth-child(3)::before { animation-delay: 1.2s; }
 
 @keyframes journey-stop {
     from { opacity: 0; transform: translateY(14px) scale(.96); }
@@ -1626,7 +1634,13 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 
 /* Which newsroom, said plainly. A reader should never have to guess whether a
    headline came from the state paper or an independent one. */
+/* inline-flex, because the global `svg { display: block }` reset otherwise
+   drops the external-link icon onto a line of its own beneath the newsroom
+   name. */
 .news-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: .72rem;
     font-weight: 700;
     letter-spacing: .12em;
@@ -2124,7 +2138,7 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     padding: .5em 1em;
     background: var(--cream-2);
     border: 1px solid var(--gold-200);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
     font-size: .87rem;
     color: var(--green-800);
 }
@@ -2592,7 +2606,15 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     .hero__media { min-height: 340px; }
     .hero__photo,
     .hero__edge { clip-path: polygon(0 0, 50% 9%, 100% 0, 100% 100%, 0 100%); }
-    .hero__edge { transform: translateY(-11px); }
+    /* The notch rests 11px above the photo here, but `edge-sweep` finishes at
+       translateX(-13px) — and an animation beats a plain declaration, so the
+       sweep was dragging the chevron sideways out of position and leaving it
+       there. The sweep is a desktop gesture across a wide hero; stacked, it
+       has nowhere to travel. Turn it off and the resting position holds. */
+    .hero__edge {
+        animation: none;
+        transform: translateY(-11px);
+    }
     .flag-corner { width: 104px; opacity: .9; }
 
     .pillars__grid { grid-template-columns: 1fr; }
@@ -2710,7 +2732,10 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     align-items: center;
 }
 
-.values-row { display: grid; grid-template-columns: repeat(3, 1fr); }
+/* minmax(0, 1fr) rather than a bare 1fr: a plain `1fr` track cannot shrink
+   below its content's min-content width, so at around 960px the three labels
+   refused to narrow and pushed the whole page into a horizontal scroll. */
+.values-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .value-stack {
     display: flex;
     flex-direction: column;
@@ -3581,6 +3606,9 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 .cf-clip--wide { grid-column: 1 / -1; }
 /* 848 x 384 — its true dimensions, so there are no bars on any edge. */
 .cf-clip--wide video { aspect-ratio: 848 / 384; }
+/* The parade clip is 832 x 464, near enough 16:9. It was letterboxed inside
+   the portrait frame the other clips use; given its own shape it fills. */
+.cf-clip--16x9 video { aspect-ratio: 16 / 9; }
 
 /* --- Closing call to action ----------------------------------------------- */
 .cf-cta {
@@ -3646,15 +3674,6 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
        picture whatever shape it turns out to be. */
     position: absolute;
     inset: 0;
-}
-.lightbox__caption {
-    position: absolute;
-    left: 0; right: 0; bottom: 22px;
-    margin: 0;
-    padding: 0 clamp(70px, 12vw, 130px);
-    text-align: center;
-    font-size: .88rem;
-    color: rgba(255, 255, 255, .82);
 }
 
 .lightbox__close,
@@ -3887,7 +3906,7 @@ p.link-row { margin-bottom: 0; }
     height: 34px;
     padding: 0 9px;
     border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius);
     background: var(--cream-2);
     color: var(--green-700);
     font-family: var(--font-body);
@@ -3954,4 +3973,542 @@ p.link-row { margin-bottom: 0; }
 
 @media (prefers-reduced-motion: reduce) {
     .say-more svg { transition: none; }
+}
+
+/* ==========================================================================
+   29. News page
+   ========================================================================== */
+
+/* --- Hero: copy and search beside a photograph --------------------------- */
+.news-hero { padding-bottom: clamp(48px, 5vw, 84px); }
+/* Measured off the design mock: its hero photo is 490px wide in an 810px
+   content column, so the split is about 1 : 1.67 rather than the even-ish
+   1 : 1.15 this started with. The picture is the point of the row. */
+.news-hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.65fr);
+    gap: clamp(26px, 3.4vw, 52px);
+    align-items: center;
+}
+.news-hero__media {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    /* 490 x 285 in the mock is 1.72; 16:9 is the nearest standard shape and
+       crops this photograph better than 3:2 did. */
+    aspect-ratio: 16 / 9;
+}
+.news-hero__media img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Held back from the site-wide h1 size: the copy column is now the narrower
+   of the two, and at the full display size the heading broke over three
+   lines with a single word stranded on the second. `balance` evens the rag
+   across whatever lines it does take. */
+.news-hero .section-title {
+    font-size: clamp(1.7rem, 2.7vw, 2.35rem);
+    text-wrap: balance;
+}
+
+/* --- Search -------------------------------------------------------------- */
+.news-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    max-width: 420px;
+    margin-top: 1.8rem;
+}
+.news-search__icon {
+    position: absolute;
+    left: 16px;
+    color: var(--green-700);
+    pointer-events: none;
+}
+.news-search input {
+    width: 100%;
+    padding: .82em 1em .82em 3rem;
+    background: #fff;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: .96rem;
+    transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.news-search input:focus {
+    outline: none;
+    border-color: var(--green-700);
+    box-shadow: 0 0 0 3px rgba(17, 106, 59, .14);
+}
+.news-search__count {
+    margin: .7rem 0 0;
+    min-height: 1.2em;      /* holds its line so results do not nudge the page */
+    font-size: .86rem;
+    color: var(--ink-soft);
+}
+
+/* --- Filter chips -------------------------------------------------------- */
+.news-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 clamp(24px, 3vw, 38px);
+}
+.news-filters[hidden] { display: none; }
+.news-chip {
+    padding: .55em 1.15em;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--green-800);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease),
+                color var(--t-fast) var(--ease),
+                border-color var(--t-fast) var(--ease);
+}
+.news-chip:hover { background: var(--gold-100); border-color: var(--gold-300); }
+.news-chip.is-on {
+    background: var(--green-700);
+    border-color: var(--green-700);
+    color: #fff;
+}
+/* Same chips on the dark band. */
+.news-filters--ondark .news-chip { border-color: rgba(255, 255, 255, .3); color: rgba(255, 255, 255, .86); }
+.news-filters--ondark .news-chip:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .5); }
+.news-filters--ondark .news-chip.is-on { background: var(--gold); border-color: var(--gold); color: var(--green-900); }
+
+/* --- Story cards --------------------------------------------------------- */
+/* 320px floor rather than 280: at the 1200px shell a 280 minimum fits four
+   across, which crowds the titles. Three is what the design calls for. */
+.story-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: clamp(18px, 2.2vw, 26px);
+}
+.story-grid[hidden] { display: none; }
+.story {
+    display: flex;
+    flex-direction: column;
+    background: var(--paper);
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: transform var(--t-base) var(--ease),
+                box-shadow var(--t-base) var(--ease),
+                border-color var(--t-base) var(--ease);
+}
+.story:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--gold-200);
+}
+/* The lead story runs two columns wide where there is room for it. */
+.story--lead { grid-column: span 2; }
+.story__media { display: block; aspect-ratio: 3 / 2; overflow: hidden; background: var(--cream-2); }
+.story__media img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--t-slow) var(--ease); }
+.story:hover .story__media img { transform: scale(1.05); }
+/* No photograph: the flag stripe stands in rather than a grey box. */
+.story__media--blank {
+    background: linear-gradient(115deg,
+        var(--green-700) 0 32%, var(--gold) 32% 62%, #fff 62% 68%, var(--red) 68% 100%);
+    opacity: .5;
+}
+.story__body { display: flex; flex-direction: column; gap: .45rem; padding: 20px 22px 24px; }
+.story__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    font-size: .76rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.story__cat { font-weight: 700; color: var(--green-700); }
+.story__date { color: var(--ink-faint); letter-spacing: .02em; text-transform: none; }
+.story__title { font-size: 1.16rem; line-height: 1.28; margin: 0; }
+.story__title a { color: var(--green-900); text-decoration: none; }
+.story__title a:hover { text-decoration: underline; }
+.story__blurb { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+
+/* --- The Guyana band ----------------------------------------------------- */
+.news-band { background: var(--green-900); }
+.news-band .section-title { color: #fff; }
+.news-band .section-intro { color: rgba(255, 255, 255, .74); }
+.news-band .news-note { color: rgba(255, 255, 255, .55); }
+.news-card__source svg { opacity: .55; flex: none; }
+
+/* --- Empty and no-match panels ------------------------------------------- */
+.empty-note {
+    padding: clamp(26px, 3vw, 40px);
+    background: var(--paper);
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-lg);
+    color: var(--ink-soft);
+    font-size: .95rem;
+}
+.empty-note[hidden] { display: none; }
+.empty-note p { margin: 0 0 .6rem; }
+.empty-note p:last-child { margin-bottom: 0; }
+.empty-note--ondark {
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 255, 255, .22);
+    color: rgba(255, 255, 255, .8);
+}
+.empty-note--ondark b { color: #fff; }
+
+@media (max-width: 940px) {
+    .news-hero__inner { grid-template-columns: 1fr; }
+    .news-hero__media { aspect-ratio: 16 / 10; }
+    .news-search { max-width: none; }
+    .story--lead { grid-column: auto; }
+}
+
+/* --- News page: the lead block ------------------------------------------- */
+
+/* One tall story beside two wide ones, as in the design mock. */
+.story-lead-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: clamp(18px, 2.2vw, 26px);
+    margin-bottom: clamp(28px, 3.4vw, 44px);
+}
+.story-lead-grid[hidden] { display: none; }
+.story-side {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: clamp(18px, 2.2vw, 26px);
+    min-height: 0;
+}
+
+.story--hero { height: 100%; }
+.story--hero .story__media { aspect-ratio: 16 / 10; }
+.story--hero .story__body { padding: clamp(22px, 2.4vw, 30px); gap: .6rem; }
+.story__title--hero {
+    font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+    line-height: 1.12;
+}
+.story__cta { margin: .6rem 0 0; }
+
+/* The two beside it lie on their side: picture left, words right. */
+.story--side {
+    display: grid;
+    grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+    align-items: stretch;
+    min-height: 0;
+}
+.story--side .story__media { aspect-ratio: auto; height: 100%; }
+.story--side .story__body { padding: 18px 20px; justify-content: center; }
+.story--side .story__title { font-size: 1.06rem; }
+.story--side .story__blurb { font-size: .88rem; }
+
+@media (max-width: 940px) {
+    .story-lead-grid { grid-template-columns: 1fr; }
+    .story-side { grid-template-rows: auto auto; }
+    .story--side { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+}
+@media (max-width: 560px) {
+    .story--side { grid-template-columns: 1fr; }
+    .story--side .story__media { aspect-ratio: 16 / 9; }
+}
+
+/* --- News page: "read the full story" and the reader ---------------------- */
+
+.story__more {
+    display: inline-flex;
+    align-items: center;
+    gap: .5em;
+    margin-top: auto;
+    padding: .6em 0 0;
+    border: 0;
+    background: none;
+    color: var(--green-700);
+    font-family: var(--font-body);
+    font-size: .9rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+.story__more svg { transition: transform var(--t-base) var(--ease); }
+.story__more:hover svg,
+.story:hover .story__more svg { transform: translateX(5px); }
+.story__more:hover { color: var(--green-900); }
+
+/* The reader itself: a column of text at a readable measure, over a scrim. */
+.reader {
+    width: min(760px, 92vw);
+    max-width: 92vw;
+    max-height: 88dvh;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--paper);
+    color: var(--ink);
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+.reader::backdrop { background: rgba(6, 26, 18, .72); backdrop-filter: blur(3px); }
+.reader[open] { animation: modal-in .28s var(--ease); }
+
+.reader__close {
+    position: sticky;
+    top: 14px;
+    left: 100%;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 40px; height: 40px;
+    margin: 14px 14px -40px 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--green-900);
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease);
+}
+.reader__close:hover { background: var(--cream-2); }
+
+.reader__inner { padding: clamp(26px, 4vw, 46px); }
+.reader__media {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-bottom: 1.6rem;
+}
+.reader__media[hidden] { display: none; }
+.reader__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 0 0 .5rem;
+    font-size: .76rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--green-700);
+}
+.reader__meta span:last-child { color: var(--ink-faint); font-weight: 500; letter-spacing: .02em; text-transform: none; }
+.reader__title {
+    font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+    line-height: 1.1;
+    margin: 0 0 1.2rem;
+}
+/* 65–75 characters is the readable measure; this is a page of prose. */
+.reader__body { max-width: 68ch; }
+.reader__body p { margin: 0 0 1.05em; }
+.reader__body ul { margin: 0 0 1.05em; padding-left: 1.2em; }
+.reader__body li { margin-bottom: .45em; }
+.reader__body p:last-child, .reader__body ul:last-child { margin-bottom: 0; }
+
+
+@media (prefers-reduced-motion: reduce) {
+    .story__more:hover svg, .story:hover .story__more svg { transform: none; }
+}
+
+/* --- News page: the headline pager ---------------------------------------- */
+
+/* Chips on the left, page arrows on the right, wrapping to two rows when
+   there is not room for both. */
+.news-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: clamp(24px, 3vw, 38px);
+}
+.news-bar .news-filters { margin-bottom: 0; }
+
+.news-pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+.news-pager[hidden] { display: none; }
+.news-pager__btn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(255, 255, 255, .86);
+    cursor: pointer;
+    transition: background var(--t-fast) var(--ease),
+                border-color var(--t-fast) var(--ease),
+                color var(--t-fast) var(--ease),
+                opacity var(--t-fast) var(--ease);
+}
+.news-pager__btn:hover:not(:disabled) {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--green-900);
+}
+/* Kept visible rather than removed at the ends, so the row does not resize
+   as you page and the arrows stay where the pointer expects them. */
+.news-pager__btn:disabled { opacity: .3; cursor: default; }
+
+.news-pager__count {
+    min-width: 3.2em;
+    text-align: center;
+    font-size: .84rem;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255, 255, 255, .7);
+}
+
+@media (max-width: 620px) {
+    .news-bar { justify-content: flex-start; }
+    .news-pager { margin-left: 0; }
+}
+
+/* ==========================================================================
+   30. Swipe rows on mobile
+
+   Card grids that stack into a tall column on a phone become a single
+   horizontal row you flick through instead. Nine event cards stacked is a
+   lot of scrolling past things you have already decided about; side by side
+   they are three flicks.
+
+   Built on scroll-snap rather than a script: the browser does the physics,
+   it works with a thumb, a trackpad, a keyboard and a screen reader, and
+   there is nothing to break if JavaScript fails.
+   ========================================================================== */
+@media (max-width: 720px) {
+    .card-grid,
+    .card-grid--3,
+    .card-grid--4,
+    .news-grid,
+    .story-grid {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 78%;          /* the next card peeks, so it is
+                                            obvious the row keeps going */
+        grid-template-columns: none;
+        gap: 14px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        /* Full-bleed: the row runs to both edges of the screen and the
+           gutters become scroll padding, so the first card still lines up
+           with the heading above it. */
+        margin-inline: calc(50% - 50vw);
+        padding-inline: max(20px, calc((100vw - var(--shell)) / 2));
+        padding-bottom: 6px;
+        scroll-padding-inline: max(20px, calc((100vw - var(--shell)) / 2));
+        scrollbar-width: none;
+    }
+    .card-grid::-webkit-scrollbar,
+    .news-grid::-webkit-scrollbar,
+    .story-grid::-webkit-scrollbar { display: none; }
+
+    .card-grid > *,
+    .news-grid > *,
+    .story-grid > * { scroll-snap-align: start; }
+
+    /* The cards no longer set their own height against each other, so the
+       row needs a common one or the snap points land at odd places. */
+    .news-grid > * { align-self: stretch; }
+}
+
+/* A hint that the row moves, for anyone who has not tried to swipe it. */
+@media (max-width: 720px) {
+    .swipe-hint {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 10px 0 0;
+        font-size: .78rem;
+        color: var(--ink-faint);
+    }
+    .swipe-hint svg { animation: swipe-nudge 1.9s var(--ease) infinite; }
+}
+.swipe-hint { display: none; }
+@keyframes swipe-nudge {
+    0%, 100% { transform: translateX(0); opacity: .5; }
+    50%      { transform: translateX(5px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .swipe-hint svg { animation: none; }
+}
+
+/* ==========================================================================
+   31. Culture page — QA pass
+   ========================================================================== */
+
+/* The tab images are photographed collages rather than framed prints, so
+   they take a hard black edge and square corners instead of the soft
+   rounded card treatment the rest of the site uses. */
+.tabs__panel .split__media {
+    border: 2px solid var(--flag-black);
+    border-radius: 0;
+    box-shadow: none;
+}
+.tabs__panel .split__media::after { border-radius: 0; border: 0; }
+.tabs__panel .split__media img { border-radius: 0; }
+
+/* Nine food names wrapped to four rows on a phone — 200px of chips before
+   you reach the picture. Side by side they are one flick. */
+@media (max-width: 720px) {
+    .tabs__panel .chip-row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        margin-inline: calc(50% - 50vw);
+        padding-inline: max(20px, calc((100vw - var(--shell)) / 2));
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .tabs__panel .chip-row::-webkit-scrollbar { display: none; }
+    .tabs__panel .chip { flex: none; scroll-snap-align: start; }
+}
+
+/* --------------------------------------------------------------------------
+   The six ancestries
+
+   Six chips for six peoples who arrived separately and ended up at one
+   table. They land one after another rather than all at once, which is the
+   whole point of the sentence above them, and lift under the pointer.
+   -------------------------------------------------------------------------- */
+.chip-row--peoples .chip {
+    transition: transform var(--t-fast) var(--ease),
+                background var(--t-fast) var(--ease),
+                border-color var(--t-fast) var(--ease),
+                color var(--t-fast) var(--ease);
+}
+.chip-row--peoples .chip:hover {
+    transform: translateY(-3px);
+    background: var(--gold-100);
+    border-color: var(--gold);
+    color: var(--green-900);
+}
+
+/* Held back until the block scrolls in, then dealt out left to right. */
+.reveal .chip-row--peoples .chip { opacity: 0; }
+.reveal.is-visible .chip-row--peoples .chip { animation: peoples-in .5s var(--ease) both; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(1) { animation-delay: .05s; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(2) { animation-delay: .13s; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(3) { animation-delay: .21s; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(4) { animation-delay: .29s; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(5) { animation-delay: .37s; }
+.reveal.is-visible .chip-row--peoples .chip:nth-child(6) { animation-delay: .45s; }
+
+@keyframes peoples-in {
+    from { opacity: 0; transform: translateY(10px) scale(.94); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal .chip-row--peoples .chip { opacity: 1; }
+    .reveal.is-visible .chip-row--peoples .chip { animation: none; }
+    .chip-row--peoples .chip:hover { transform: none; }
 }

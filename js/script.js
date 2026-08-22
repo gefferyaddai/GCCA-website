@@ -1271,7 +1271,6 @@ function initLightbox() {
     if (!gallery || !box || typeof box.showModal !== 'function') return;
 
     const view = $('.lightbox__img', box);
-    const caption = $('[data-lightbox-caption]', box);
     const tiles = $$('.cf-tile', gallery);
     if (!tiles.length) return;
 
@@ -1284,7 +1283,6 @@ function initLightbox() {
         if (!img) return;
         view.src = img.currentSrc || img.src;
         view.alt = img.alt || '';
-        caption.textContent = img.alt || '';
     };
 
     tiles.forEach((tile, i) => {
@@ -1345,8 +1343,14 @@ function initLightbox() {
 
     /* Send focus back to the tile the visitor opened, not to the top of the
        page — otherwise closing the viewer loses their place in the grid. */
+    /* The blank the viewer rests on. Restoring this rather than removing the
+       attribute frees the previous photograph without ever leaving the
+       element src-less. */
+    const BLANK = view.getAttribute('src');
+
     box.addEventListener('close', () => {
-        view.removeAttribute('src');
+        if (BLANK) view.setAttribute('src', BLANK);
+        else view.removeAttribute('src');
         tiles[current].focus();
     });
 }
@@ -1900,16 +1904,122 @@ async function initNews() {
 
     /* Headline, one line, link out — never the article itself. Every link
        leaves the site, so it opens in a new tab and says where it is going. */
-    list.innerHTML = items.map((item, index) =>
-        '<article class="news-card reveal" data-delay="' + (index % 3) + '">' +
-        '<span class="news-card__source">' + esc(item.source) + '</span>' +
+    /* Only the first render animates in on scroll. A page turn is a direct
+       response to a button press: those cards must be there immediately,
+       not wait on an IntersectionObserver that fires a frame later. */
+    let firstDraw = true;
+
+    const card = (item, index) =>
+        '<article class="news-card' + (firstDraw ? ' reveal' : '') +
+        '" data-delay="' + (index % 3) + '"' +
+        ' data-source="' + esc(item.source) + '">' +
+        '<span class="news-card__source">' + esc(item.source) +
+        '<svg width="13" height="13" aria-hidden="true"><use href="#i-external"/></svg></span>' +
         '<h3 class="news-card__title">' +
         '<a href="' + esc(item.link) + '" target="_blank" rel="noopener noreferrer">' +
         esc(item.title) + '</a></h3>' +
         (item.snippet ? '<p class="news-card__text">' + esc(item.snippet) + '</p>' : '') +
         '<span class="news-card__time">' + esc(relativeDay(item.published)) + '</span>' +
-        '</article>'
-    ).join('');
+        '</article>';
+
+    let sourceFilter = 'all';
+
+    /* Three at a time, as in the design. The rest are a page turn away
+       rather than a wall of nine. */
+    const PER_PAGE = 3;
+    let page = 0;
+
+    const pager = $('[data-news-pager]');
+    const prevBtn = $('[data-news-prev]');
+    const nextBtn = $('[data-news-next]');
+    const pageLabel = $('[data-news-page]');
+
+    const matching = () => {
+        const term = newsSearchTerm();
+        return items.filter(item => {
+            if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
+            if (!term) return true;
+            return (item.title + ' ' + (item.snippet || '') + ' ' + item.source)
+                .toLowerCase().includes(term);
+        });
+    };
+
+    const draw = () => {
+        const shown = matching();
+        const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE));
+
+        /* Filtering or searching can leave the current page past the end. */
+        if (page > pages - 1) page = pages - 1;
+        if (page < 0) page = 0;
+
+        const slice = shown.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+        list.innerHTML = slice.map(card).join('');
+
+        const empty = $('[data-news-empty]');
+        if (empty) empty.hidden = shown.length > 0;
+
+        /* No controls when everything already fits on one page — three
+           headlines with a dead pair of arrows beside them looks broken. */
+        if (pager) {
+            pager.hidden = pages < 2;
+            if (pages > 1) {
+                prevBtn.disabled = page === 0;
+                nextBtn.disabled = page === pages - 1;
+                pageLabel.textContent = (page + 1) + ' / ' + pages;
+            }
+        }
+
+        if (firstDraw) {
+            observeReveals(list);   /* these arrived after initReveal ran */
+            firstDraw = false;
+        }
+        return shown.length;
+    };
+
+    const turn = (by) => {
+        const pages = Math.max(1, Math.ceil(matching().length / PER_PAGE));
+        page = Math.min(pages - 1, Math.max(0, page + by));
+        draw();
+    };
+
+    if (prevBtn) prevBtn.addEventListener('click', () => turn(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => turn(1));
+
+    /* Arrow keys work when the pager has focus, which is what a person who
+       has just clicked one of these buttons will try next. */
+    if (pager) {
+        pager.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') { event.preventDefault(); turn(-1); }
+            if (event.key === 'ArrowRight') { event.preventDefault(); turn(1); }
+        });
+    }
+
+    /* One chip per newsroom the feed actually returned — never a hard-coded
+       list, so a source that drops out does not leave a dead filter. */
+    const filters = $('[data-news-filters]');
+    if (filters) {
+        const names = [...new Set(items.map(item => item.source))];
+        if (names.length > 1) {
+            filters.innerHTML =
+                '<button class="news-chip is-on" type="button" data-src="all">All sources</button>' +
+                names.map(name =>
+                    '<button class="news-chip" type="button" data-src="' + esc(name) + '">' +
+                    esc(name) + '</button>').join('');
+            filters.hidden = false;
+            filters.addEventListener('click', (event) => {
+                const chip = event.target.closest('.news-chip');
+                if (!chip) return;
+                sourceFilter = chip.getAttribute('data-src');
+                page = 0;      /* a new selection starts at its beginning */
+                $$('.news-chip', filters).forEach(b => b.classList.toggle('is-on', b === chip));
+                draw();
+                announceSearchCount();
+            });
+        }
+    }
+
+    NEWS_REDRAW = () => { page = 0; draw(); };
+    draw();
 
     const note = $('[data-news-sources]');
     if (note && data.sources) {
@@ -1918,7 +2028,276 @@ async function initNews() {
     }
 
     section.hidden = false;
-    observeReveals(list);      // these arrived after initReveal ran
+    announceSearchCount();
+}
+
+/* ==========================================================================
+   Search across everything on the News page
+
+   One box filtering two lists that arrive at different times: the stories
+   are in the page from the start, the headlines land whenever /api/news
+   answers. Each list registers a redraw function here, and the box calls
+   whichever ones exist.
+   ========================================================================== */
+let NEWS_REDRAW = null;
+let STORIES_REDRAW = null;
+
+function newsSearchTerm() {
+    const box = $('[data-news-search]');
+    return box ? box.value.trim().toLowerCase() : '';
+}
+
+function announceSearchCount() {
+    const out = $('[data-search-count]');
+    if (!out) return;
+    const term = newsSearchTerm();
+    if (!term) { out.textContent = ''; return; }
+    const found = $$('#newsList .news-card').length + $$('[data-story-grid] .story').length;
+    out.textContent = found === 0
+        ? 'Nothing matches “' + term + '”.'
+        : found + (found === 1 ? ' result' : ' results') + ' for “' + term + '”.';
+}
+
+function initNewsSearch() {
+    const box = $('[data-news-search]');
+    if (!box) return;
+    let timer = null;
+    const run = () => {
+        if (STORIES_REDRAW) STORIES_REDRAW();
+        if (NEWS_REDRAW) NEWS_REDRAW();
+        announceSearchCount();
+    };
+    box.addEventListener('input', () => {
+        /* Debounced: retyping a word should not rebuild both grids per keystroke. */
+        clearTimeout(timer);
+        timer = setTimeout(run, 140);
+    });
+    /* Escape clears, which is what the little x in a search field does anyway. */
+    box.addEventListener('search', run);
+}
+
+/* ==========================================================================
+   GCCA's own stories
+
+   Reads js/news-data.js. That file ships empty, so by default this draws
+   nothing and leaves the honest empty panel in place. It is written to work
+   the moment a real story is added, with no markup changes.
+   ========================================================================== */
+function initStories() {
+    const grid = $('[data-story-grid]');
+    if (!grid) return;
+
+    const all = (window.GCCA_STORIES || []).slice()
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+    /* A stable handle for the reader to look each story up by. */
+    all.forEach((story, i) => { story.id = 'story-' + i; });
+
+    const lead = $('[data-story-lead]');
+    const empty = $('[data-stories-empty]');
+    const filters = $('[data-story-filters]');
+    const intro = $('[data-stories-intro]');
+
+    if (!all.length) {
+        grid.hidden = true;
+        if (lead) lead.hidden = true;
+        if (filters) filters.hidden = true;
+        if (empty) empty.hidden = false;
+        return;
+    }
+
+    let category = 'all';
+
+    const dateLabel = (iso) => {
+        const when = iso ? new Date(iso + 'T12:00:00') : null;
+        if (!when || isNaN(when)) return '';
+        return when.toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const mediaFor = (story) => story.image
+        ? '<span class="story__media"><img src="' + esc(story.image) + '" alt="' +
+          esc(story.alt || '') + '" loading="lazy"></span>'
+        : '<span class="story__media story__media--blank" aria-hidden="true"></span>';
+
+    /* Titles carry raw entities from the data file (&amp;, &rsquo;), so they
+       are inserted as-is rather than escaped twice. */
+    const titleFor = (story) => {
+        if (!story.link) return story.title;
+        const external = /^https?:/i.test(story.link);
+        return '<a href="' + esc(story.link) + '"' +
+            (external ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' +
+            story.title + '</a>';
+    };
+
+    const metaFor = (story) =>
+        '<p class="story__meta"><span class="story__cat">' + esc(story.category || '') +
+        '</span><span class="story__date">' + esc(dateLabel(story.date)) + '</span></p>';
+
+    /* The arrow only appears when there is a full story behind it — a
+       control that opens an empty panel is worse than no control. */
+    const moreFor = (story) => story.body && story.body.length
+        ? '<button class="story__more" type="button" data-open-story="' + esc(story.id) + '">' +
+          'Read the full story' +
+          '<svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg></button>'
+        : '';
+
+    const card = (story, index) =>
+        '<article class="story reveal" data-delay="' + (index % 3) + '">' + mediaFor(story) +
+        '<div class="story__body">' + metaFor(story) +
+        '<h3 class="story__title">' + titleFor(story) + '</h3>' +
+        (story.blurb ? '<p class="story__blurb">' + story.blurb + '</p>' : '') +
+        moreFor(story) +
+        '</div></article>';
+
+    /* --- the lead block: one tall story, two wide ones beside it --------- */
+    if (lead) {
+        const hero = all.find(s => s.featured);
+        const side = all.filter(s => s.secondary).slice(0, 2);
+
+        if (hero) {
+            const sideCards = side.map(story =>
+                '<article class="story story--side reveal" data-delay="1">' + mediaFor(story) +
+                '<div class="story__body">' + metaFor(story) +
+                '<h3 class="story__title">' + titleFor(story) + '</h3>' +
+                (story.blurb ? '<p class="story__blurb">' + story.blurb + '</p>' : '') +
+                moreFor(story) +
+                '</div></article>').join('');
+
+            lead.innerHTML =
+                '<article class="story story--hero reveal">' + mediaFor(hero) +
+                '<div class="story__body">' + metaFor(hero) +
+                '<h2 class="story__title story__title--hero">' + titleFor(hero) + '</h2>' +
+                (hero.blurb ? '<p class="story__blurb">' + hero.blurb + '</p>' : '') +
+                (hero.body && hero.body.length
+                    ? '<p class="story__cta"><button class="btn btn--gold" type="button" data-open-story="' +
+                      esc(hero.id) + '">Read the story' +
+                      '<svg class="btn__arrow" width="18" height="18" aria-hidden="true"><use href="#i-arrow"/></svg>' +
+                      '</button></p>'
+                    : '') +
+                '</div></article>' +
+                (sideCards ? '<div class="story-side">' + sideCards + '</div>' : '');
+            lead.hidden = false;
+            observeReveals(lead);
+        }
+    }
+
+    /* --- the grid below, everything that is not in the lead block -------- */
+    const rest = all.filter(s => !s.featured && !s.secondary);
+
+    const draw = () => {
+        const term = newsSearchTerm();
+        const pool = term ? all : rest;      /* searching looks at everything */
+        const shown = pool.filter(story => {
+            if (category !== 'all' && story.category !== category) return false;
+            if (!term) return true;
+            return (story.title + ' ' + (story.blurb || '') + ' ' + (story.category || ''))
+                .toLowerCase().includes(term);
+        });
+
+        grid.innerHTML = shown.map(card).join('');
+        grid.hidden = shown.length === 0;
+        if (empty) empty.hidden = shown.length > 0;
+        if (intro) intro.hidden = shown.length === 0;
+        /* The lead block is a curated top slot, not a search result. */
+        if (lead && !lead.hidden) lead.style.display = (term || category !== 'all') ? 'none' : '';
+        observeReveals(grid);
+        return shown.length;
+    };
+
+    const categories = [...new Set(all.map(s => s.category).filter(Boolean))];
+    if (filters && categories.length > 1) {
+        filters.innerHTML =
+            '<button class="news-chip is-on" type="button" data-cat="all">All stories</button>' +
+            categories.map(name =>
+                '<button class="news-chip" type="button" data-cat="' + esc(name) + '">' +
+                esc(name) + '</button>').join('');
+        filters.hidden = false;
+        filters.addEventListener('click', (event) => {
+            const chip = event.target.closest('.news-chip');
+            if (!chip) return;
+            category = chip.getAttribute('data-cat');
+            $$('.news-chip', filters).forEach(b => b.classList.toggle('is-on', b === chip));
+            draw();
+            announceSearchCount();
+        });
+    }
+
+    STORIES_REDRAW = draw;
+    draw();
+    initStoryReader(all);
+}
+
+/* ==========================================================================
+   The full-story reader
+
+   A native <dialog>, so the browser owns the backdrop, the focus trap and
+   Escape. One dialog reused for every story rather than nine hidden copies
+   of the same markup sitting in the page.
+   ========================================================================== */
+function initStoryReader(stories) {
+    const box = $('#storyReader');
+    if (!box || typeof box.showModal !== 'function') return;
+
+    const media = $('.reader__media', box);
+    const blank = media ? media.getAttribute('src') : null;
+    const cat = $('[data-reader-cat]', box);
+    const date = $('[data-reader-date]', box);
+    const title = $('[data-reader-title]', box);
+    const body = $('[data-reader-body]', box);
+    let opener = null;
+
+    const dateLabel = (iso) => {
+        const when = iso ? new Date(iso + 'T12:00:00') : null;
+        if (!when || isNaN(when)) return '';
+        return when.toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    const open = (story, from) => {
+        opener = from || null;
+
+        if (media) {
+            if (story.image) {
+                media.src = story.image;
+                media.alt = story.alt || '';
+                media.hidden = false;
+            } else {
+                media.hidden = true;
+            }
+        }
+        cat.textContent = story.category || '';
+        date.textContent = dateLabel(story.date);
+        title.innerHTML = story.title;
+        /* Paragraphs already carry their own inline markup from the data
+           file, so they are inserted rather than escaped. */
+        body.innerHTML = (story.body || [])
+            .map(part => /^\s*<(ul|ol|blockquote)/i.test(part) ? part : '<p>' + part + '</p>')
+            .join('');
+
+        box.showModal();
+        box.scrollTop = 0;
+    };
+
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-open-story]');
+        if (!trigger) return;
+        const story = stories.find(s => s.id === trigger.getAttribute('data-open-story'));
+        if (story) open(story, trigger);
+    });
+
+    $('[data-reader-close]', box).addEventListener('click', () => box.close());
+
+    /* Clicking the space around the article closes it. */
+    box.addEventListener('click', (event) => {
+        if (event.target === box) box.close();
+    });
+
+    box.addEventListener('close', () => {
+        if (media && blank) { media.src = blank; media.hidden = true; }
+        body.innerHTML = '';
+        /* Back to the card they came from, not the top of the page. */
+        if (opener && document.contains(opener)) opener.focus();
+        opener = null;
+    });
 }
 
 /* ==========================================================================
@@ -1973,6 +2352,10 @@ function init() {
     initReturnMessages();
     initDocContents();
     initPrintButtons();
+    /* Stories are in the page already; the search box wires to whichever
+       lists exist; the headlines register themselves whenever /api answers. */
+    initStories();
+    initNewsSearch();
     initNews();
     /* Before initVideoFacades, so the observer exists when a facade swaps
        itself for a player and calls watchVideo(). */

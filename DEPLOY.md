@@ -109,6 +109,30 @@ to Microsoft 365 addresses, all of those change together.
 
 Not technical, but the site is not finished without them.
 
+### News stories — needs GCCA's sign-off before launch
+
+The nine stories in `js/news-data.js` were drafted here, not written by the
+association. Most are built from facts already on the site — the event dates
+and venues come from `js/events-data.js`, the volunteer areas from the
+membership form, and the Carifest piece from the festival's own published
+programme and the Calgary Herald's coverage.
+
+But they carry publication dates and are written in GCCA's voice, so the
+executives need to read them and confirm each one before the site goes public.
+Anything they do not want simply comes out of the array; the page adjusts.
+
+Two specifics worth checking with them:
+
+- **The Carifest parade location.** `events-data.js` says Cowboys Park.
+  carifestcalgary.com lists the parade along **Stephen Avenue**, with Carnival
+  in D Park at Cowboys Park. If members are being sent to the wrong place that
+  matters more than the website does.
+- **Any dated claim about an event that has already happened** — whether it
+  actually went the way the story says.
+
+- [ ] Executives have read and approved all nine stories
+- [ ] Carifest parade location confirmed against the festival's own listing
+
 - [x] ~~Membership terms wording~~ — received, on the membership form
 - [x] ~~Volunteer options list~~ — received, on the membership form
 - [x] ~~Contact consent line~~ — received
