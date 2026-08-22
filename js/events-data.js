@@ -103,7 +103,7 @@ window.GCCA_EVENTS = [
     {
         slug: 'taste-of-guyana',
         title: 'Taste of Guyana',
-        venue: 'Fatima Hall',
+        venue: 'Portuguese Community Centre, Our Lady of Fatima Parish Hall',
         address: '4747 30th St SE, Calgary',
         time: '',
         date: '2026-10-10',
