@@ -1375,8 +1375,10 @@ function initVideoFacades() {
             /* enablejsapi lets us post a pause command to the player when it
                scrolls out of view. It costs nothing — no YouTube script is
                loaded, we just talk to the iframe that is already here. */
+            /* playsinline so iOS plays the video in the frame it was tapped in
+               rather than throwing it into the native fullscreen player. */
             frame.src = 'https://www.youtube-nocookie.com/embed/'
-                + encodeURIComponent(id) + '?autoplay=1&rel=0&enablejsapi=1';
+                + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1&enablejsapi=1';
             frame.title = facade.getAttribute('aria-label') || 'Video';
             frame.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
             frame.allowFullscreen = true;
