@@ -792,6 +792,12 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 }
 .feature-split__media {
     position: relative;
+    /* Column, so the credit line can sit beneath the picture rather than on
+       top of it. It used to be an overlay pinned to the bottom edge, which
+       meant that once the player loaded it covered YouTube's own control bar
+       — and swallowed the taps aimed at it. */
+    display: flex;
+    flex-direction: column;
     /* A floor for the case where the copy is short; normally the copy is
        taller than this and the panel simply matches it. */
     min-height: 420px;
@@ -815,30 +821,25 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
    and would therefore win on source order — the aspect-ratio and radius
    would never be overridden. */
 .feature-split__media .vidframe--fill {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    flex: 1 1 auto;
     aspect-ratio: auto;
     border-radius: 0;
     box-shadow: none;
 }
 .feature-split__media .vidfacade__play > span { width: 94px; height: 94px; }
 
-/* Attribution for a video that is not ours, kept legible over the picture
-   without a heavy bar across it. */
+/* Attribution for a video that is not ours. It sits below the picture, on the
+   panel's own green, so it never covers the player's controls. */
 .feature-split__credit {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    z-index: 2;
+    flex: 0 0 auto;
     margin: 0;
-    padding: 42px 24px 16px;
+    padding: 14px 24px 16px;
     font-size: .78rem;
     color: rgba(255, 255, 255, .82);
-    background: linear-gradient(to top, rgba(6, 32, 21, .8), transparent);
-    pointer-events: none;
 }
 .feature-split__credit a {
     color: #fff;
-    pointer-events: auto;
     text-decoration: underline;
     text-decoration-color: rgba(255, 255, 255, .45);
 }
@@ -858,13 +859,15 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
    the copy returns to the shell's own gutters. */
 @media (max-width: 940px) {
     .feature-split { grid-template-columns: 1fr; }
-    /* 16:9, matching the video exactly. At 16:10 the poster was cropped and,
-       worse, the panel was short enough that the play button took 39% of its
-       height and the credit strip another third. */
-    .feature-split__media { min-height: 0; aspect-ratio: 16 / 9; }
+    /* 16:9, matching the video exactly, so the poster isn't cropped. The ratio
+       is on the frame rather than the panel: the panel also holds the credit
+       line, and squeezing that inside the ratio box would put it back over the
+       player. The panel is then as tall as the video plus the credit. */
+    .feature-split__media { min-height: 0; }
+    .feature-split__media .vidframe--fill { flex: 0 0 auto; aspect-ratio: 16 / 9; }
     .feature-split__media .vidfacade__play > span { width: 62px; height: 62px; }
     .feature-split__media .vidfacade__play svg { width: 24px; height: 24px; }
-    .feature-split__credit { padding: 26px 18px 12px; font-size: .74rem; }
+    .feature-split__credit { padding: 12px 20px 14px; font-size: .74rem; }
     .feature-split__copy {
         padding: clamp(38px, 7vw, 56px) max(20px, calc((100vw - var(--shell)) / 2));
     }
