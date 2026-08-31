@@ -24,7 +24,7 @@
    ========================================================================== */
 
 /* Where "renew now" points. Update when the domain is live — see DEPLOY.md. */
-const SITE_URL = 'https://gccacalgary.ca';
+const SITE_URL = 'https://gccacalgary.com';
 
 /* Which reminder goes out on which day, and the column that records it.
    Months are 1-based here for readability. */
