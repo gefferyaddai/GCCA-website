@@ -11,56 +11,56 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>https://gccacalgary.ca/</loc>
+    <loc>https://gccacalgary.com/</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/events</loc>
+    <loc>https://gccacalgary.com/events</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/about</loc>
+    <loc>https://gccacalgary.com/about</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/culture</loc>
+    <loc>https://gccacalgary.com/culture</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/carifest</loc>
+    <loc>https://gccacalgary.com/carifest</loc>
     <lastmod>2026-08-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/news</loc>
+    <loc>https://gccacalgary.com/news</loc>
     <lastmod>2026-08-22</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/bylaws</loc>
+    <loc>https://gccacalgary.com/bylaws</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
 
   <url>
-    <loc>https://gccacalgary.ca/policy</loc>
+    <loc>https://gccacalgary.com/policy</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
