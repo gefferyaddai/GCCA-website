@@ -4,4 +4,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://gccacalgary.ca/sitemap.xml
+Sitemap: https://gccacalgary.com/sitemap.xml
