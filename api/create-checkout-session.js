@@ -19,7 +19,7 @@
      SQUARE_ACCESS_TOKEN   sandbox token now, production token at go-live
      SQUARE_LOCATION_ID    the location money is taken against
      SQUARE_ENVIRONMENT    'sandbox' or 'production'
-     SITE_URL              e.g. https://gccacalgary.ca  (no trailing slash)
+     SITE_URL              e.g. https://gccacalgary.com  (no trailing slash)
 
    Never commit any of these. See DEPLOY.md.
    ========================================================================== */
