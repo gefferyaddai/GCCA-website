@@ -67,7 +67,7 @@ URL** — that is why `SHEET_ENDPOINT` also changes.
 | `SQUARE_ACCESS_TOKEN` | sandbox token | **production** token |
 | `SQUARE_LOCATION_ID` | sandbox location | GCCA's location |
 | `SQUARE_ENVIRONMENT` | `sandbox` | `production` |
-| `SITE_URL` | preview URL | `https://gccacalgary.ca` |
+| `SITE_URL` | preview URL | `https://gccacalgary.com` |
 
 **Keys are set in the Vercel dashboard by GCCA, not pasted into any file and not
 sent over email or chat.** Vercel → Project → Settings → Environment Variables.
@@ -86,20 +86,20 @@ Anything committed to the repo is public the moment the repo is.
 
 | What | Now | At handover |
 |---|---|---|
-| Address | Vercel preview URL | `gccacalgary.ca` |
-| Contact address on the site | `gccacalgary@gmail.com` | unchanged, or `info@gccacalgary.ca` if M365 lands |
+| Address | Vercel preview URL | `gccacalgary.com` |
+| Contact address on the site | `gccacalgary@gmail.com` | unchanged, or `info@gccacalgary.com` if M365 lands |
 
 The site currently shows `gccacalgary@gmail.com` in the footer of every page, on
 the policy page, on the by-laws page and in the membership section. If they move
 to Microsoft 365 addresses, all of those change together.
 
-- [ ] `gccacalgary.ca` registered and pointed at Vercel
+- [ ] `gccacalgary.com` registered and pointed at Vercel
 - [ ] `SITE_URL` environment variable updated
 - [ ] Redirect from the Vercel URL to the domain
 - [ ] Email addresses across the site updated if M365 has landed
 - [ ] Share previews checked once live — paste a page URL into Facebook's
       Sharing Debugger. `og:image`, `og:url` and `sitemap.xml` are already
-      written against `https://gccacalgary.ca`, so they only start resolving
+      written against `https://gccacalgary.com`, so they only start resolving
       when the domain does. **If a different domain is ever chosen, all six
       pages plus `sitemap.xml` and `robots.txt` need updating.**
 
