@@ -42,7 +42,7 @@ const PASS_ON_FEE = true;
 const EVENTS = {
     'stampede-golf-bbq':             { name: 'Stampede Golf & BBQ',                             adult: 0,  youth: 0 },
     'carifest':                      { name: 'Carifest (parade costume)',                       adult: 50, youth: 30 },
-    'rgm-september':                 { name: "Members' Regular General Meeting",                adult: 0,  youth: 0, meal: 5 },
+    'rgm-september':                 { name: "Members' RGM & Games Night (September)",          adult: 0,  youth: 0, meal: 5 },
     'caribbean-sports-day':          { name: 'Caribbean Sports Day',                            adult: 0,  youth: 0 },
     'taste-of-guyana':               { name: 'Taste of Guyana',                                 adult: 0,  youth: 0 },
     'family-christmas-party':        { name: 'Family Christmas Party',                          adult: 0,  youth: 0 },

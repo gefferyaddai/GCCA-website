@@ -74,21 +74,6 @@ window.GCCA_EVENTS = [
         special: true
     },
     {
-        slug: 'rgm-september',
-        title: "Members' Regular General Meeting",
-        venue: 'Venue to be confirmed',
-        address: '',
-        time: '',
-        date: '2026-09-01',
-        dateTbd: true,
-        endsOn: '2026-09-30',
-        blurb: 'Your voice shapes the future. Show up and be part of the decision making.',
-        image: 'assets/event-general-meeting.jpg',
-        adult: 0,
-        youth: 0,
-        meal: 5
-    },
-    {
         slug: 'caribbean-sports-day',
         title: 'Caribbean Sports Day',
         venue: 'Rotary Challenger Park',
@@ -99,6 +84,19 @@ window.GCCA_EVENTS = [
         image: 'assets/event-sports-day.jpg',
         adult: 0,
         youth: 0
+    },
+    {
+        slug: 'rgm-september',
+        title: "Members' Regular General Meeting & Games Night",
+        venue: 'Venue to be confirmed',
+        address: '',
+        time: 'Meeting 2:00pm · Games night 4:00pm',
+        date: '2026-09-19',
+        blurb: 'Your voice shapes the future. Show up and be part of the decision making, then stay for games night.',
+        image: 'assets/event-general-meeting.jpg',
+        adult: 0,
+        youth: 0,
+        meal: 5
     },
     {
         slug: 'taste-of-guyana',
