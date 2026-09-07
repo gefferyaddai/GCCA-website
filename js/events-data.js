@@ -91,7 +91,7 @@ window.GCCA_EVENTS = [
         venue: 'Venue to be confirmed',
         address: '',
         time: 'Meeting 2:00pm · Games night 4:00pm',
-        date: '2026-09-19',
+        date: '2026-09-20',
         blurb: 'Your voice shapes the future. Show up and be part of the decision making, then stay for games night.',
         image: 'assets/event-general-meeting.jpg',
         adult: 0,
