@@ -29,6 +29,11 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5"/></symbol>
+  <!-- The flyer viewer at the foot of the page, same icons as carifest.html. -->
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5m0 0 5.5-5.5M5 12l5.5 5.5"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M15 20v-5h5M9 20v-5H4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></symbol>
   <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="5" width="18.4" height="14" rx="2.5"/><path d="m3.6 6.8 8.4 6 8.4-6"/></symbol>
@@ -279,6 +284,19 @@
                 </div>
               </div>
 
+              <!-- Meetings where the little ones eat free. Shown only when the
+                   chosen event sets `mealFreeUnder` in events-data.js. They are
+                   counted but never charged, so the kitchen still knows how
+                   many to cook for. -->
+              <div class="field" id="littleField" hidden>
+                <label for="littleQty">Children <span class="field__hint" data-little-hint>5 and under</span> <span class="field__hint">— eat free</span></label>
+                <div class="qty">
+                  <button type="button" data-step="-1" data-target="littleQty" aria-label="One fewer child eating free">&minus;</button>
+                  <input type="number" id="littleQty" name="littles" value="0" min="0" max="20" inputmode="numeric">
+                  <button type="button" data-step="1" data-target="littleQty" aria-label="One more child eating free">+</button>
+                </div>
+              </div>
+
               <!-- Meetings that offer a meal. Shown only when the chosen event
                    has a `meal` price in events-data.js; hidden otherwise. -->
               <fieldset class="choice-set field--full" id="mealField" hidden>
@@ -290,7 +308,7 @@
                   </label>
                   <label class="check">
                     <input type="radio" name="meal" value="yes">
-                    <span>Meeting with meal — <b data-meal-price>$5</b> per person</span>
+                    <span>Meeting with meal — <b data-meal-price>$5</b> per person<span data-meal-free-note hidden></span></span>
                   </label>
                 </div>
               </fieldset>
@@ -336,6 +354,7 @@
           <ul class="order-lines" id="orderLines">
             <li><span>Adult tickets</span><b data-line="adults">—</b></li>
             <li><span>Child tickets</span><b data-line="youth">—</b></li>
+            <li data-line-row="little" hidden><span>Children eating free</span><b data-line="little">—</b></li>
             <li data-line-row="meal" hidden><span>Meals</span><b data-line="meal">—</b></li>
           </ul>
           <p class="order-total">
@@ -381,6 +400,32 @@
   </section>
 
 </main>
+
+<!-- Flyer viewer. Built empty; the script fills it when a flyer is clicked.
+     Same markup as the photo viewer on carifest.html, with one addition: the
+     "Open full size" link. A flyer scaled to fit a phone screen is too small
+     to read, and handing the raw image to the browser gets pinch-zoom and
+     save-to-photos for free. -->
+<dialog class="lightbox" id="lightbox" aria-label="Flyer viewer">
+  <button class="lightbox__full" type="button" data-lightbox-full aria-label="View full screen">
+    <svg width="20" height="20" aria-hidden="true"><use href="#i-expand"/></svg>
+  </button>
+  <button class="lightbox__close" type="button" data-lightbox-close aria-label="Close flyer">
+    <svg width="22" height="22" aria-hidden="true"><use href="#i-close"/></svg>
+  </button>
+  <button class="lightbox__nav lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous flyer">
+    <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+  </button>
+  <img class="lightbox__img" alt=""
+       src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+  <button class="lightbox__nav lightbox__nav--next" type="button" data-lightbox-next aria-label="Next flyer">
+    <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow"/></svg>
+  </button>
+  <a class="lightbox__open" data-lightbox-open href="#" target="_blank" rel="noopener">
+    Open full size
+    <svg width="15" height="15" aria-hidden="true"><use href="#i-expand"/></svg>
+  </a>
+</dialog>
 
 <footer class="site-footer">
   <div class="shell">
