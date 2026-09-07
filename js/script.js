@@ -764,11 +764,24 @@ function eventFlyersHTML(ev) {
         '</div>';
 }
 
+/* The line on a card for events that feed the little ones free. Only the meal
+   at a meeting needs its price said out loud here — the ticket price of a
+   ticketed event is already on the card as a tag — so the meal is named when
+   there is one and left out when there is not. */
+function eventFreeUnderNote(ev) {
+    const under = Number(ev.freeUnder) || 0;
+    if (under < 2) return '';
+    const note = (under - 1) + ' and under eat free';
+    return Number(ev.meal) > 0 ? 'Meal ' + money(ev.meal) + ' · ' + note : note;
+}
+
 function eventCardHTML(ev, options) {
     const opts = options || {};
     const past = !!opts.past;
     const date = parseDay(ev.date);
     const where = [ev.venue, ev.address].filter(Boolean).join(', ');
+    // Nobody needs the price of a meal already eaten.
+    const freeNote = past ? '' : eventFreeUnderNote(ev);
     const when = past
         ? 'Held ' + longDate(ev)
         : longDate(ev) + (ev.time ? ' · ' + ev.time : '');
@@ -802,6 +815,7 @@ function eventCardHTML(ev, options) {
         '<h3 class="event-card__title" style="margin-top:.6rem">' + esc(eventTitle(ev)) + '</h3>' +
         '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-calendar"/></svg> ' + esc(when) + '</p>' +
         (where ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-pin"/></svg> ' + esc(where) + '</p>' : '') +
+        (freeNote ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-ticket"/></svg> ' + esc(freeNote) + '</p>' : '') +
         '<p class="event-card__text">' + esc(ev.blurb) + '</p>' +
         /* Flyers advertise something still to come, so they stay off the past
            archive — nobody needs the poster for an event already held. */
