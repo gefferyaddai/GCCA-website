@@ -94,8 +94,8 @@ window.GCCA_EVENTS = [
     {
         slug: 'rgm-september',
         title: "Members' Regular General Meeting & Games Night",
-        venue: 'Venue to be confirmed',
-        address: '',
+        venue: 'SVG Hall',
+        address: '2110 41 Ave NE, Calgary, AB T2E 8Z7',
         time: 'Meeting 2:00pm · Games night 4:00pm',
         date: '2026-09-20',
         blurb: 'Your voice shapes the future. Show up and be part of the decision making, then stay for games night.',
