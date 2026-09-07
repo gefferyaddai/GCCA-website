@@ -31,6 +31,13 @@
      meal        Price of the optional meal at a meeting, in CAD. The form then
                  offers "Meeting only (free)" or "Meeting with meal ($5)".
                  Leave it off for events where a meal isn't offered separately.
+     mealFreeUnder
+                 Age below which the meal is not charged for. `6` means kids 5
+                 and under eat free. The form grows a third quantity box for
+                 them, so the association still gets a head count to cater for
+                 — they are counted, just not charged. Set `ages.youth` to
+                 match on the same event, or the Children box will still claim
+                 to start at 2 when it now starts at the age given here.
      special     true for galas, tournaments, catered and ticketed events —
                  the ones with pre-paid vendors and fixed costs. These get the
                  longer refund windows (14 / 7 days) from the cancellation
@@ -41,6 +48,17 @@
                    0    → free, RSVP only
                    25   → $25 a ticket
                  `youth` is the child rate (2–17). Under 2 always free.
+     flyers      Optional. Poster images for the event, shown as a row of small
+                 portrait thumbnails on the card; clicking one opens the flyer
+                 viewer. Each entry is { src, alt }. Save them PORTRAIT — the
+                 thumbnail shows the whole flyer uncropped, so nothing is lost
+                 off the top or bottom the way the 3:2 `image` above would cut
+                 it. A flyer whose file is missing drops out of the row quietly
+                 rather than leaving a broken image on the page.
+                 `alt` matters: it is what a screen reader announces and all
+                 Google can read, so describe the flyer, and keep the date,
+                 time, venue and price in the fields above as well — never let
+                 the flyer be the only place a detail appears.
      ages        Only for events whose age bands differ from that standard.
                  { adult: '19+', youth: '6–18, 5 and under free' } rewrites the
                  two hints on the registration form while that event is chosen,
@@ -88,6 +106,15 @@ window.GCCA_EVENTS = [
         date: '2026-09-12',
         blurb: 'Participate in one or more of the sports: football, basketball, cricket, dominoes, track & field.',
         image: 'assets/event-sports-day.jpg',
+        flyers: [
+            { src: 'assets/eventflyers/SportsDay.jpeg', alt: 'Caribbean Heritage Sports Competition flyer — 10th anniversary, Saturday 12 September, Calgary Rotary Challenger Park, 3688 48 Ave NE. Soccer, basketball, volleyball, netball, cricket, tennis clinic, pickleball, track & field and lime & spoon. Opening ceremony 1pm, free tennis clinic for under-15s, games, food and a live DJ.' },
+            /* The symposium the evening before, carried on this card. It runs on
+               its own date at its own venue, so the alt text leads with both —
+               the card's badge and address are the Saturday's, not this one's.
+               The space in the file name is encoded; leaving it raw works in
+               most browsers but not in every share preview or feed reader. */
+            { src: 'assets/eventflyers/Bruny%20Surin.jpeg', alt: 'Sports Day Symposium flyer — an evening with Bruny Surin, Olympic champion and keynote speaker, on the Friday before Sports Day: 11 September, 7:00pm to 9:00pm at the Marriott Hotel, 2530 48th Ave NE, Calgary. Free, all ages welcome.' }
+        ],
         adult: 0,
         youth: 0
     },
@@ -102,17 +129,23 @@ window.GCCA_EVENTS = [
         image: 'assets/event-general-meeting.jpg',
         adult: 0,
         youth: 0,
-        meal: 5
+        meal: 5,
+        mealFreeUnder: 6,
+        ages: { youth: '6–17' }
     },
     {
         slug: 'taste-of-guyana',
         title: 'Taste of Guyana',
         venue: 'Portuguese Community Centre, Our Lady of Fatima Parish Hall',
         address: '4747 30th St SE, Calgary',
-        time: '',
+        /* Both sittings, from the 2026 flyer. */
+        time: 'Dinner & bake sale 4:00pm – 7:30pm · Dance 7:30pm – 11:00pm',
         date: '2026-10-10',
         blurb: 'Treat your buds to a taste of Guyanese cuisine.',
         image: 'assets/event-taste-of-guyana.jpg',
+        flyers: [
+            { src: 'assets/eventflyers/TOG_2026-flyer.png', alt: 'The Taste of Guyana flyer — 10 October 2026 at Our Lady of Fatima Hall, 4747 30th Street SE. Adults $25, kids 6 to 18 $20, kids 5 and under free. Dinner and bake sale 4:00 to 7:30pm, dance 7:30 to 11:00pm.' }
+        ],
         adult: 25,
         youth: 20,
         ages: { adult: '19+', youth: '6–18, 5 and under free' },
@@ -158,7 +191,9 @@ window.GCCA_EVENTS = [
         image: 'assets/event-games-night.jpg',
         adult: 0,
         youth: 0,
-        meal: 5
+        meal: 5,
+        mealFreeUnder: 6,
+        ages: { youth: '6–17' }
     },
     {
         slug: 'volunteer-appreciation-dinner',
