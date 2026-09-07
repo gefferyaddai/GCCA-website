@@ -36,6 +36,11 @@
     <g id="i-base" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></g>
   </defs>
   <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5"/></symbol>
+  <!-- The flyer viewer at the foot of the page, same icons as carifest.html. -->
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H5m0 0 5.5-5.5M5 12l5.5 5.5"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M15 20v-5h5M9 20v-5H4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8.4 5.3a1 1 0 0 1 1.52-.85l8.3 5.2a1.6 1.6 0 0 1 0 2.7l-8.3 5.2a1 1 0 0 1-1.52-.85V5.3Z"/></symbol>
   <symbol id="i-community" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2.5 19.5a6.5 6.5 0 0 1 13 0"/><path d="M16.6 6.1a2.9 2.9 0 0 1 0 5.6"/><path d="M17.4 14.2a5.4 5.4 0 0 1 4.1 4.6"/></symbol>
   <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9.5"/><path d="M12 11.5c0-4.1 2.7-7.2 7.2-7.2 0 4.6-2.9 7.2-7.2 7.2Z"/><path d="M12 15.5c-3.5 0-5.9-2.3-5.9-5.8 3.8 0 5.9 2.3 5.9 5.8Z"/></symbol>
@@ -624,6 +629,32 @@
   </section>
 
 </main>
+
+<!-- Flyer viewer. Built empty; the script fills it when a flyer is clicked.
+     Same markup as the photo viewer on carifest.html, with one addition: the
+     "Open full size" link. A flyer scaled to fit a phone screen is too small
+     to read, and handing the raw image to the browser gets pinch-zoom and
+     save-to-photos for free. -->
+<dialog class="lightbox" id="lightbox" aria-label="Flyer viewer">
+  <button class="lightbox__full" type="button" data-lightbox-full aria-label="View full screen">
+    <svg width="20" height="20" aria-hidden="true"><use href="#i-expand"/></svg>
+  </button>
+  <button class="lightbox__close" type="button" data-lightbox-close aria-label="Close flyer">
+    <svg width="22" height="22" aria-hidden="true"><use href="#i-close"/></svg>
+  </button>
+  <button class="lightbox__nav lightbox__nav--prev" type="button" data-lightbox-prev aria-label="Previous flyer">
+    <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+  </button>
+  <img class="lightbox__img" alt=""
+       src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+  <button class="lightbox__nav lightbox__nav--next" type="button" data-lightbox-next aria-label="Next flyer">
+    <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow"/></svg>
+  </button>
+  <a class="lightbox__open" data-lightbox-open href="#" target="_blank" rel="noopener">
+    Open full size
+    <svg width="15" height="15" aria-hidden="true"><use href="#i-expand"/></svg>
+  </a>
+</dialog>
 
 <!-- ==========================================================
      Footer
