@@ -31,13 +31,14 @@
      meal        Price of the optional meal at a meeting, in CAD. The form then
                  offers "Meeting only (free)" or "Meeting with meal ($5)".
                  Leave it off for events where a meal isn't offered separately.
-     mealFreeUnder
-                 Age below which the meal is not charged for. `6` means kids 5
-                 and under eat free. The form grows a third quantity box for
-                 them, so the association still gets a head count to cater for
-                 — they are counted, just not charged. Set `ages.youth` to
-                 match on the same event, or the Children box will still claim
-                 to start at 2 when it now starts at the age given here.
+     freeUnder   Age below which nobody is charged to eat. `6` means kids 5 and
+                 under eat free — whether that is the optional meal at a meeting
+                 or a ticketed dinner like Taste of Guyana. The form grows a
+                 third quantity box for them, so the association still gets a
+                 head count to cater for: they are counted, just never charged.
+                 Set `ages.youth` to match on the same event, or the Children
+                 box will still claim to start at 2 when it now starts at the
+                 age given here.
      special     true for galas, tournaments, catered and ticketed events —
                  the ones with pre-paid vendors and fixed costs. These get the
                  longer refund windows (14 / 7 days) from the cancellation
@@ -130,7 +131,7 @@ window.GCCA_EVENTS = [
         adult: 0,
         youth: 0,
         meal: 5,
-        mealFreeUnder: 6,
+        freeUnder: 6,
         ages: { youth: '6–17' }
     },
     {
@@ -148,7 +149,8 @@ window.GCCA_EVENTS = [
         ],
         adult: 25,
         youth: 20,
-        ages: { adult: '19+', youth: '6–18, 5 and under free' },
+        freeUnder: 6,
+        ages: { adult: '19+', youth: '6–18' },
         special: true
     },
     {
@@ -192,7 +194,7 @@ window.GCCA_EVENTS = [
         adult: 0,
         youth: 0,
         meal: 5,
-        mealFreeUnder: 6,
+        freeUnder: 6,
         ages: { youth: '6–17' }
     },
     {
