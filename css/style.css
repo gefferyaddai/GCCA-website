@@ -978,6 +978,68 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     margin: 0 0 1.1rem;
 }
 
+/* --- Flyers on an event card ----------------------------------------------
+   Deliberately small. A letter-size flyer at card width cannot be read however
+   it is presented, so the thumbnail only has to say "there is a flyer here" and
+   be easy to hit; the reading happens in the viewer. Height is capped so a card
+   with flyers does not tower over the two beside it in the row. */
+.event-flyers { margin: 0 0 1.1rem; }
+.event-flyers__label {
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 .5rem;
+}
+.event-flyers__row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.flyer-tile {
+    position: relative;
+    display: block;
+    padding: 0;
+    height: 104px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: zoom-in;
+    background: var(--paper);
+    transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+/* `contain`, not `cover`: the title at the top of a flyer and the contact line
+   at the bottom are the first things a crop would throw away. The tile takes
+   its width from the flyer's own proportions. */
+.flyer-tile img {
+    display: block;
+    width: auto;
+    height: 100%;
+    object-fit: contain;
+}
+.flyer-tile:hover,
+.flyer-tile:focus-visible { border-color: var(--green-700); transform: translateY(-2px); }
+
+.flyer-tile__zoom {
+    position: absolute;
+    top: 6px; right: 6px;
+    display: grid;
+    place-items: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .92);
+    color: var(--green-900);
+    opacity: 0;
+    transform: scale(.8);
+    transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.flyer-tile:hover .flyer-tile__zoom,
+.flyer-tile:focus-visible .flyer-tile__zoom { opacity: 1; transform: scale(1); }
+
+/* One card to a row on a phone, so there is room to show them larger — which
+   is also where a bigger tap target matters most. */
+@media (max-width: 720px) {
+    .flyer-tile { height: 148px; }
+}
+
 .date-badge {
     position: absolute;
     /* Sits inside the photo. It used to hang 22px off the right of the old
@@ -3706,6 +3768,32 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 .lightbox:fullscreen { background: #05130D; }
 .lightbox:fullscreen .lightbox__img { max-width: 96vw; max-height: 92dvh; }
 .lightbox__nav { top: 50%; margin-top: -26px; width: 52px; height: 52px; }
+/* `display: grid` above beats the plain [hidden] rule, so a single-flyer
+   gallery needs this to actually lose its arrows. */
+.lightbox__nav[hidden] { display: none; }
+
+/* Flyer text is small, and the viewer can only scale a page-size flyer to
+   about 390px wide on a phone. This hands the raw image to the browser, where
+   pinch-zoom and save-to-photos come for free. */
+.lightbox__open {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .5rem .95rem;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #fff;
+    font-size: .84rem;
+    text-decoration: none;
+    transition: background var(--t-fast) var(--ease);
+}
+.lightbox__open:hover { background: rgba(255, 255, 255, .24); color: #fff; }
 .lightbox__nav--prev { left: clamp(10px, 2.4vw, 30px); }
 .lightbox__nav--next { right: clamp(10px, 2.4vw, 30px); }
 .lightbox__nav--prev:hover { transform: translateX(-3px); }
