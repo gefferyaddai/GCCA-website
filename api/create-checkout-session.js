@@ -38,13 +38,17 @@ const FEE_FIXED_CENTS = 30;
 const PASS_ON_FEE = true;
 
 /* Ticket prices, in dollars. Keep the slugs and numbers identical to
-   js/events-data.js — these are the ones that actually charge. */
+   js/events-data.js — these are the ones that actually charge.
+
+   `youthLabel` is only for events whose child band is not the standard 2–17;
+   it names the band on the receipt line. Keep it matching the `ages.youth`
+   for the same slug in js/events-data.js. */
 const EVENTS = {
     'stampede-golf-bbq':             { name: 'Stampede Golf & BBQ',                             adult: 0,  youth: 0 },
     'carifest':                      { name: 'Carifest (parade costume)',                       adult: 50, youth: 30 },
     'rgm-september':                 { name: "Members' RGM & Games Night (September)",          adult: 0,  youth: 0, meal: 5 },
     'caribbean-sports-day':          { name: 'Caribbean Sports Day',                            adult: 0,  youth: 0 },
-    'taste-of-guyana':               { name: 'Taste of Guyana',                                 adult: 0,  youth: 0 },
+    'taste-of-guyana':               { name: 'Taste of Guyana',                                 adult: 25, youth: 20, youthLabel: '6–18' },
     'family-christmas-party':        { name: 'Family Christmas Party',                          adult: 0,  youth: 0 },
     'bowling-pizza-party':           { name: 'Bowling & Pizza Party',                           adult: 0,  youth: 0 },
     'rgm-games-night':               { name: "Members' Regular General Meeting & Games Night",  adult: 0,  youth: 0, meal: 5 },
@@ -112,7 +116,7 @@ function buildOrder(body) {
 
         label = event.name;
         if (adults > 0 && event.adult > 0) items.push(lineItem(event.name + ' — adult admission', adults, event.adult));
-        if (youth  > 0 && event.youth > 0) items.push(lineItem(event.name + ' — child admission (2–17)', youth, event.youth));
+        if (youth  > 0 && event.youth > 0) items.push(lineItem(event.name + ' — child admission (' + (event.youthLabel || '2–17') + ')', youth, event.youth));
         if (meals  > 0 && event.meal  > 0) items.push(lineItem(event.name + ' — meal', meals, event.meal));
 
     } else {
