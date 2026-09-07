@@ -782,10 +782,13 @@ function populateEventSelect(upcoming) {
         } else if (pricing === 'tba') {
             suffix = ' (price to come)';
         }
+        const ages = ev.ages || {};
         return '<option value="' + esc(ev.slug) + '"' +
             ' data-pricing="' + pricing + '"' +
             ' data-adult="' + (Number(ev.adult) || 0) + '"' +
             ' data-youth="' + (Number(ev.youth) || 0) + '"' +
+            ' data-adult-ages="' + esc(ages.adult || '') + '"' +
+            ' data-youth-ages="' + esc(ages.youth || '') + '"' +
             ' data-meal="' + (Number(ev.meal) || 0) + '"' +
             ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
             ' data-iso="' + esc(ev.date || '') + '"' +
@@ -928,6 +931,14 @@ function initRegistration() {
     const nameField = $('#regName');
     const signature = $('#regSignature');
 
+    /* The age bands beside the two quantity boxes. Most events use the standard
+       wording written into events.html, which is what we keep here to fall back
+       to; an event carrying `ages` in events-data.js replaces it while chosen. */
+    const ageHints = {};
+    $$('[data-age-hint]', form).forEach(el => {
+        ageHints[el.dataset.ageHint] = { el: el, standard: el.textContent };
+    });
+
     // The signature is dated the day it is typed.
     $$('[data-signature-date]', form).forEach(el => { el.textContent = longDay(new Date()); });
 
@@ -963,6 +974,10 @@ function initRegistration() {
             iso:  option ? (option.dataset.iso || '') : '',
             pricing, adults, youth, adultPrice, youthPrice, tier,
             mealPrice, wantsMeal, meals,
+            ages: {
+                adult: option ? (option.dataset.adultAges || '') : '',
+                youth: option ? (option.dataset.youthAges || '') : ''
+            },
             total: adults * adultPrice + youth * youthPrice + meals * mealPrice
         };
     }
@@ -972,6 +987,13 @@ function initRegistration() {
         const lineAdults = $('[data-line="adults"]');
         const lineYouth  = $('[data-line="youth"]');
         const lineMeal   = $('[data-line="meal"]');
+
+        // Age bands for the event in hand, standard wording for everything else.
+        Object.keys(ageHints).forEach(key => {
+            const hint = ageHints[key];
+            const band = order.slug ? order.ages[key] : '';
+            hint.el.textContent = band ? '(' + band + ')' : hint.standard;
+        });
 
         // The meal choice only belongs on screen for events that offer one.
         if (mealField) {
