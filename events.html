@@ -120,7 +120,7 @@
       <div class="section-head">
         <div>
           <h2 class="section-title" style="margin-bottom:.2em">Upcoming Events</h2>
-          <p class="section-intro">Everyone is welcome at our events, apart from the few marked <b>(Members only)</b>. Children 2 and under always come free. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
+          <p class="section-intro">Everyone is welcome at our events, apart from the few marked <b>(Members only)</b>. Our youngest always come free &mdash; the registration form shows the age bands for the event you choose. Venues, dates and times marked to be confirmed will be updated here as soon as they are finalised.</p>
         </div>
         <a class="link-arrow" href="#register">Register now
           <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg>
@@ -263,7 +263,7 @@
               </div>
 
               <div class="field">
-                <label for="adultQty">Adults <span class="field__hint">(18+)</span></label>
+                <label for="adultQty">Adults <span class="field__hint" data-age-hint="adult">(18+)</span></label>
                 <div class="qty">
                   <button type="button" data-step="-1" data-target="adultQty" aria-label="One fewer adult ticket">&minus;</button>
                   <input type="number" id="adultQty" name="adults" value="1" min="0" max="20" inputmode="numeric">
@@ -271,7 +271,7 @@
                 </div>
               </div>
               <div class="field">
-                <label for="youthQty">Children <span class="field__hint">(2–17, under 2 free)</span></label>
+                <label for="youthQty">Children <span class="field__hint" data-age-hint="youth">(2–17, under 2 free)</span></label>
                 <div class="qty">
                   <button type="button" data-step="-1" data-target="youthQty" aria-label="One fewer child ticket">&minus;</button>
                   <input type="number" id="youthQty" name="youth" value="0" min="0" max="20" inputmode="numeric">
