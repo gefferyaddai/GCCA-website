@@ -831,7 +831,7 @@ function populateEventSelect(upcoming) {
             ' data-adult-ages="' + esc(ages.adult || '') + '"' +
             ' data-youth-ages="' + esc(ages.youth || '') + '"' +
             ' data-meal="' + (Number(ev.meal) || 0) + '"' +
-            ' data-meal-free-under="' + (Number(ev.mealFreeUnder) || 0) + '"' +
+            ' data-free-under="' + (Number(ev.freeUnder) || 0) + '"' +
             ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
             ' data-iso="' + esc(ev.date || '') + '"' +
             ' data-name="' + esc(eventTitle(ev)) + '"' +
@@ -939,11 +939,10 @@ function initEvents() {
    ========================================================================== */
 
 /* Meals at general meetings are charged for everyone sitting down to eat,
-   children included — except the very young, where the event sets
-   `mealFreeUnder`. Those are counted on the form so the kitchen knows the real
-   number, and left out of the charge here. If the executive decides it should
-   be one flat charge per household instead, change this to `() => 1` — nothing
-   else moves. */
+   children included — except the very young, where the event sets `freeUnder`.
+   Those are counted on the form so the kitchen knows the real number, and left
+   out of the charge here. If the executive decides it should be one flat charge
+   per household instead, change this to `() => 1` — nothing else moves. */
 const mealCount = (adults, youth) => adults + youth;
 
 /* Which cancellation terms apply, in the words of the policy page. Shown on the
@@ -1008,7 +1007,7 @@ function initRegistration() {
         const youthPrice = option ? Number(option.dataset.youth || 0) : 0;
         const mealPrice  = option ? Number(option.dataset.meal || 0) : 0;
         const tier = option && select.value ? (option.dataset.tier || 'standard') : '';
-        const freeUnder = option ? Number(option.dataset.mealFreeUnder || 0) : 0;
+        const freeUnder = option ? Number(option.dataset.freeUnder || 0) : 0;
         const adults = clampQty(adultQty);
         const youth  = clampQty(youthQty);
         // Only counted where the event actually offers it, so a stale number
