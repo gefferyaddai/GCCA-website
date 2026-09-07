@@ -726,6 +726,44 @@ function eventTag(ev, past) {
     return '<span class="tag tag--gold">Tickets · price to come</span>';
 }
 
+/* The row of flyer thumbnails on a card.
+
+   Sized small on purpose. A letter-size flyer at card width is far too small
+   to read, so the thumbnail's job is only to say "there is a flyer here, open
+   it" — the reading happens in the viewer. It shows the flyer whole rather
+   than cropped to fill, because the top and bottom of a flyer are where the
+   title and the contact details live.
+
+   Each card is its own `data-lightbox` gallery, so the arrows in the viewer
+   page through one event's flyers rather than every flyer on the page. */
+/* A flyer that has not been uploaded yet, or whose file was renamed, takes its
+   own tile out of the row rather than leaving a broken image on a public page.
+   When the last tile goes the whole strip goes with it, heading and all —
+   otherwise the card is left with a "Flyers" label over nothing. */
+function flyerFailed(img) {
+    const tile = img.closest('.flyer-tile');
+    const strip = img.closest('[data-flyer-strip]');
+    if (tile) tile.remove();
+    if (strip && !strip.querySelector('.flyer-tile')) strip.remove();
+}
+
+function eventFlyersHTML(ev) {
+    const flyers = Array.isArray(ev.flyers) ? ev.flyers.filter(f => f && f.src) : [];
+    if (!flyers.length) return '';
+
+    const tiles = flyers.map(flyer =>
+        '<button class="flyer-tile" type="button" data-lightbox-tile>' +
+        '<img src="' + esc(flyer.src) + '" alt="' + esc(flyer.alt || (ev.title + ' flyer')) + '" loading="lazy"' +
+        ' onerror="flyerFailed(this)">' +
+        '<span class="flyer-tile__zoom" aria-hidden="true"><svg width="15" height="15"><use href="#i-expand"/></svg></span>' +
+        '</button>').join('');
+
+    return '<div class="event-flyers" data-lightbox data-flyer-strip>' +
+        '<p class="event-flyers__label">' + (flyers.length > 1 ? 'Flyers' : 'Flyer') + '</p>' +
+        '<div class="event-flyers__row">' + tiles + '</div>' +
+        '</div>';
+}
+
 function eventCardHTML(ev, options) {
     const opts = options || {};
     const past = !!opts.past;
@@ -765,6 +803,9 @@ function eventCardHTML(ev, options) {
         '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-calendar"/></svg> ' + esc(when) + '</p>' +
         (where ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-pin"/></svg> ' + esc(where) + '</p>' : '') +
         '<p class="event-card__text">' + esc(ev.blurb) + '</p>' +
+        /* Flyers advertise something still to come, so they stay off the past
+           archive — nobody needs the poster for an event already held. */
+        (past ? '' : eventFlyersHTML(ev)) +
         cta +
         '</div>' +
         '</article>';
@@ -790,6 +831,7 @@ function populateEventSelect(upcoming) {
             ' data-adult-ages="' + esc(ages.adult || '') + '"' +
             ' data-youth-ages="' + esc(ages.youth || '') + '"' +
             ' data-meal="' + (Number(ev.meal) || 0) + '"' +
+            ' data-meal-free-under="' + (Number(ev.mealFreeUnder) || 0) + '"' +
             ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
             ' data-iso="' + esc(ev.date || '') + '"' +
             ' data-name="' + esc(eventTitle(ev)) + '"' +
@@ -897,8 +939,11 @@ function initEvents() {
    ========================================================================== */
 
 /* Meals at general meetings are charged for everyone sitting down to eat,
-   children included. If the executive decides it should be one flat charge
-   per household instead, change this to `() => 1` — nothing else moves. */
+   children included — except the very young, where the event sets
+   `mealFreeUnder`. Those are counted on the form so the kitchen knows the real
+   number, and left out of the charge here. If the executive decides it should
+   be one flat charge per household instead, change this to `() => 1` — nothing
+   else moves. */
 const mealCount = (adults, youth) => adults + youth;
 
 /* Which cancellation terms apply, in the words of the policy page. Shown on the
@@ -917,6 +962,9 @@ function initRegistration() {
     const select    = $('#eventChoice');
     const adultQty  = $('#adultQty');
     const youthQty  = $('#youthQty');
+    const littleQty = $('#littleQty');
+    const littleField = $('#littleField');
+    const littleHint  = $('[data-little-hint]');
     const orderEvent = $('#orderEvent');
     const totalEl   = $('#orderTotal');
     const totalLabel = $('#orderTotalLabel');
@@ -960,8 +1008,12 @@ function initRegistration() {
         const youthPrice = option ? Number(option.dataset.youth || 0) : 0;
         const mealPrice  = option ? Number(option.dataset.meal || 0) : 0;
         const tier = option && select.value ? (option.dataset.tier || 'standard') : '';
+        const freeUnder = option ? Number(option.dataset.mealFreeUnder || 0) : 0;
         const adults = clampQty(adultQty);
         const youth  = clampQty(youthQty);
+        // Only counted where the event actually offers it, so a stale number
+        // left in the box cannot follow the visitor to the next event.
+        const littles = littleQty && freeUnder > 0 ? clampQty(littleQty) : 0;
 
         const mealChoice = $('input[name="meal"]:checked', form);
         const wantsMeal = mealPrice > 0 && !!mealChoice && mealChoice.value === 'yes';
@@ -973,7 +1025,7 @@ function initRegistration() {
             date: option ? (option.dataset.date || '') : '',
             iso:  option ? (option.dataset.iso || '') : '',
             pricing, adults, youth, adultPrice, youthPrice, tier,
-            mealPrice, wantsMeal, meals,
+            mealPrice, wantsMeal, meals, littles, freeUnder,
             ages: {
                 adult: option ? (option.dataset.adultAges || '') : '',
                 youth: option ? (option.dataset.youthAges || '') : ''
@@ -995,6 +1047,17 @@ function initRegistration() {
             hint.el.textContent = band ? '(' + band + ')' : hint.standard;
         });
 
+        /* The under-age box only belongs on screen for events that feed the
+           little ones free, and it names the age the event actually sets. */
+        if (littleField) {
+            littleField.hidden = !(order.freeUnder > 0);
+            if (littleField.hidden) {
+                if (littleQty) littleQty.value = '0';
+            } else if (littleHint) {
+                littleHint.textContent = (order.freeUnder - 1) + ' and under';
+            }
+        }
+
         // The meal choice only belongs on screen for events that offer one.
         if (mealField) {
             mealField.hidden = !(order.mealPrice > 0);
@@ -1004,11 +1067,28 @@ function initRegistration() {
             } else if (mealPriceEl) {
                 mealPriceEl.textContent = money(order.mealPrice);
             }
+            /* Say it where the charge is agreed to, not only beside the box. */
+            const freeNote = $('[data-meal-free-note]', form);
+            if (freeNote) {
+                freeNote.hidden = !(order.freeUnder > 0);
+                freeNote.textContent = order.freeUnder > 0
+                    ? ' — ' + (order.freeUnder - 1) + ' and under eat free'
+                    : '';
+            }
         }
         // Which refund window this booking falls under.
         if (refundTerms) {
             refundTerms.textContent = REFUND_TERMS[order.tier] || '';
             refundTerms.hidden = !order.tier;
+        }
+
+        /* Worth a line of its own even at no charge: it is the only place the
+           registration shows the little ones were counted. */
+        const littleLineRow = $('[data-line-row="little"]');
+        const lineLittle = $('[data-line="little"]');
+        if (littleLineRow) littleLineRow.hidden = order.littles < 1;
+        if (lineLittle && order.littles > 0) {
+            lineLittle.textContent = order.littles + ' eating free';
         }
 
         if (mealLineRow) mealLineRow.hidden = !order.wantsMeal;
@@ -1055,7 +1135,7 @@ function initRegistration() {
     }
 
     select.addEventListener('change', () => { setStatus(status, ''); render(); });
-    [adultQty, youthQty].forEach(input => input.addEventListener('input', render));
+    [adultQty, youthQty, littleQty].filter(Boolean).forEach(input => input.addEventListener('input', render));
     $$('input[name="meal"]', form).forEach(input => input.addEventListener('change', render));
 
     $$('.qty button').forEach(btn => {
@@ -1103,6 +1183,8 @@ function initRegistration() {
             eventDateISO: order.iso,
             adults: order.adults,
             youth: order.youth,
+            /* Not charged for, but the kitchen needs the number. */
+            littles: order.littles,
             meals: order.meals,
             mealPrice: order.mealPrice,
             mealTotal: order.meals * order.mealPrice,
@@ -1170,7 +1252,8 @@ function initRegistration() {
                 ['Event', order.name],
                 ['Date', order.date],
                 ['Attending', order.adults + ' adult' + (order.adults === 1 ? '' : 's')
-                    + (order.youth ? ', ' + order.youth + ' child' + (order.youth === 1 ? '' : 'ren') : '')],
+                    + (order.youth ? ', ' + order.youth + ' child' + (order.youth === 1 ? '' : 'ren') : '')
+                    + (order.littles ? ', ' + order.littles + ' eating free' : '')],
                 ['Meals', order.meals ? String(order.meals) : ''],
                 ['Total', order.total > 0 ? money(order.total) : 'Free']
             ]);
@@ -1288,31 +1371,53 @@ function initTabs() {
    hand-built modal.
    ========================================================================== */
 function initLightbox() {
-    const gallery = $('[data-lightbox]');
+    /* One viewer, any number of galleries. The Carifest page has a single grid
+       of photographs; the events pages have one flyer strip per event card.
+       Each gallery pages within itself, so the arrows never wander from one
+       event's flyers into another's. */
+    const TILES = '.cf-tile, [data-lightbox-tile]';
+    const galleries = $$('[data-lightbox]');
     const box = $('#lightbox');
-    if (!gallery || !box || typeof box.showModal !== 'function') return;
+    if (!galleries.length || !box || typeof box.showModal !== 'function') return;
 
     const view = $('.lightbox__img', box);
-    const tiles = $$('.cf-tile', gallery);
-    if (!tiles.length) return;
+    // Only on the events pages; the Carifest viewer has no such link.
+    const openFull = $('[data-lightbox-open]', box);
 
+    let tiles = [];
     let current = 0;
 
     const show = (index) => {
+        if (!tiles.length) return;
         /* Wraps both ways, so the arrows never dead-end. */
         current = (index + tiles.length) % tiles.length;
         const img = tiles[current].querySelector('img');
         if (!img) return;
         view.src = img.currentSrc || img.src;
         view.alt = img.alt || '';
+        if (openFull) openFull.href = view.src;
     };
 
-    tiles.forEach((tile, i) => {
-        tile.addEventListener('click', () => {
-            show(i);
-            box.showModal();
+    galleries.forEach(gallery => {
+        const own = $$(TILES, gallery);
+        own.forEach(tile => {
+            tile.addEventListener('click', () => {
+                /* Read the gallery again rather than trusting the set captured
+                   at startup: a flyer whose file is missing takes its own tile
+                   out of the row, and paging must not walk onto a tile that is
+                   no longer in the page. */
+                tiles = $$(TILES, gallery);
+                syncNav();
+                show(tiles.indexOf(tile));
+                box.showModal();
+            });
         });
     });
+
+    /* A gallery down to a single image has nothing to page through. */
+    const syncNav = () => {
+        $$('.lightbox__nav', box).forEach(btn => { btn.hidden = tiles.length < 2; });
+    };
 
     /* True full screen — the dialog already covers the viewport, this takes
        the browser's own chrome out of the way as well. Feature-detected:
@@ -1359,7 +1464,7 @@ function initLightbox() {
        and the three buttons are excluded, or the viewer would shut whenever
        someone reached for Next. */
     box.addEventListener('click', (e) => {
-        if (e.target.closest('.lightbox__img, .lightbox__close, .lightbox__nav, .lightbox__full')) return;
+        if (e.target.closest('.lightbox__img, .lightbox__close, .lightbox__nav, .lightbox__full, .lightbox__open')) return;
         box.close();
     });
 
@@ -1373,7 +1478,7 @@ function initLightbox() {
     box.addEventListener('close', () => {
         if (BLANK) view.setAttribute('src', BLANK);
         else view.removeAttribute('src');
-        tiles[current].focus();
+        if (tiles[current]) tiles[current].focus();
     });
 }
 
