@@ -41,6 +41,12 @@
                    0    → free, RSVP only
                    25   → $25 a ticket
                  `youth` is the child rate (2–17). Under 2 always free.
+     ages        Only for events whose age bands differ from that standard.
+                 { adult: '19+', youth: '6–18, 5 and under free' } rewrites the
+                 two hints on the registration form while that event is chosen,
+                 and the child line on the receipt. Every other event keeps the
+                 standard wording. Keep it matching the `youthLabel` for the
+                 same slug in api/create-checkout-session.js.
    ========================================================================== */
 
 window.GCCA_EVENTS = [
@@ -107,8 +113,9 @@ window.GCCA_EVENTS = [
         date: '2026-10-10',
         blurb: 'Treat your buds to a taste of Guyanese cuisine.',
         image: 'assets/event-taste-of-guyana.jpg',
-        adult: null,
-        youth: null,
+        adult: 25,
+        youth: 20,
+        ages: { adult: '19+', youth: '6–18, 5 and under free' },
         special: true
     },
     {
