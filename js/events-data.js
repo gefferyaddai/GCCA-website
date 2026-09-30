@@ -164,8 +164,8 @@ window.GCCA_EVENTS = [
         image: 'assets/event-christmas-party.jpg',
         membersOnly: true,
         special: true,
-        adult: null,
-        youth: null
+        adult: 0,
+        youth: 0
     },
     {
         slug: 'bowling-pizza-party',
@@ -177,8 +177,8 @@ window.GCCA_EVENTS = [
         blurb: 'Roll in for strikes, stay for slices. Bowling and pizza night starts with YOU.',
         image: 'assets/event-bowling.jpg',
         membersOnly: true,
-        adult: null,
-        youth: null
+        adult: 0,
+        youth: 0
     },
     {
         slug: 'rgm-games-night',
