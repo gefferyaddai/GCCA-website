@@ -42,7 +42,7 @@ const SPREADSHEETS = {
    opening the /exec URL shows which version is actually deployed — editing the
    file changes nothing until "New version" is pushed, and this is the only way
    to tell the two apart from outside. */
-const VERSION = '2026-08-17a';
+const VERSION = '2026-10-08a';
 
 /* Who gets told when money is owed. Used for every alert this project sends:
    new registrations and membership applications here, and in Reminders.gs the
@@ -59,6 +59,18 @@ const TREASURER_EMAIL = 'gcca.support.1991@gmail.com';
    human can fill it in.
    -------------------------------------------------------------------------- */
 
+/* A row with a Square order is written BEFORE the person reaches the payment
+   page, so at that moment nothing has been paid. Saying so stops an abandoned
+   checkout looking like a sale. The Square webhook (api/square-webhook.js)
+   overwrites this with "Paid" once the money actually lands. Cash and cheque
+   rows stay blank for the treasurer, as before. */
+const AWAITING = 'Awaiting payment';
+const PAID = 'Paid';
+
+function awaitingStatus(d) {
+    return d.squareOrder ? AWAITING : '';
+}
+
 /* EVENTS — column order matters here. The first nine are what the door team
    needs, so printing the first page of a tab gives a working guest list:
    who is coming, how many, whether they have paid, and a box to tick when
@@ -70,7 +82,7 @@ const EVENT_COLUMNS = [
     ['Children',        'youth'],
     ['Meals',           'meals'],
     ['Total owing',     'total'],
-    ['Payment status',  null],
+    ['Payment status',  awaitingStatus],
     ['Payment method',  null],
     ['Paid on',         null],
     /* Square's reference for the order, so a payment in the Square dashboard
@@ -98,7 +110,7 @@ const MEMBER_COLUMNS = [
     ['Category',        'categoryLabel'],
     ['Membership year', 'membershipYear'],
     ['Fee',             'fee'],
-    ['Payment status',  null],
+    ['Payment status',  awaitingStatus],
     ['Payment method',  null],
     ['Paid on',         null],
     /* Square's reference for the order, so a payment in the Square dashboard
@@ -237,6 +249,11 @@ function doPost(e) {
     try {
         const data = JSON.parse((e && e.postData && e.postData.contents) || '{}');
         const type = data.type || 'contact';
+
+        /* Not a form — Square confirming money arrived, relayed by our own
+           server. Handled apart because it updates a row rather than adding one. */
+        if (type === 'payment') return reply(markPaid(data));
+
         const route = ROUTES[type];
 
         if (!route) return reply({ ok: false, error: 'Unknown form type: ' + type });
@@ -260,6 +277,85 @@ function doPost(e) {
    version of the code is really running. */
 function doGet() {
     return reply({ ok: true, service: 'GCCA Calgary forms', version: VERSION });
+}
+
+/* ==========================================================================
+   Payment confirmations
+   --------------------------------------------------------------------------
+   Called by api/square-webhook.js once Square says a payment COMPLETED. Finds
+   the row carrying that Square order — on any event tab, or the Members tab —
+   and marks it paid.
+
+   The /exec URL is public (it is in the site's JavaScript), so anybody could
+   post { type: 'payment' } here. The shared secret is what stops a stranger
+   marking their own registration paid. It lives in Script Properties, never in
+   this file: Project Settings → Script Properties → PAYMENT_SECRET, set to the
+   same value as FORMS_PAYMENT_SECRET in Vercel.
+
+   Safe to run twice for the same order — Square does resend webhooks.
+   ========================================================================== */
+function markPaid(data) {
+    const secret = PropertiesService.getScriptProperties().getProperty('PAYMENT_SECRET');
+    if (!secret || data.secret !== secret) return { ok: false, error: 'Not authorised.' };
+
+    const orderId = String(data.orderId || '').trim();
+    if (!orderId) return { ok: false, error: 'No order id.' };
+
+    const paidOn = data.paidAt ? new Date(data.paidAt) : new Date();
+    const books = [bookFor('events'), bookFor('membership')];
+
+    for (let b = 0; b < books.length; b++) {
+        const sheets = books[b].getSheets();
+        for (let s = 0; s < sheets.length; s++) {
+            const sheet = sheets[s];
+            if (sheet.getLastRow() < 2) continue;
+
+            const values = sheet.getDataRange().getValues();
+            const head = values[0].map(h => String(h).trim());
+            const orderCol = head.indexOf('Square order');
+            const statusCol = head.indexOf('Payment status');
+            if (orderCol < 0 || statusCol < 0) continue;
+
+            for (let r = 1; r < values.length; r++) {
+                if (String(values[r][orderCol]).trim() !== orderId) continue;
+
+                /* Leave alone anything a person has already changed — a refund
+                   or a note written over the status is theirs, not ours. */
+                const current = String(values[r][statusCol]).trim();
+                if (current && current !== AWAITING) {
+                    return { ok: true, matched: true, changed: false, tab: sheet.getName() };
+                }
+
+                const row = r + 1;
+                sheet.getRange(row, statusCol + 1).setValue(PAID);
+                const methodCol = head.indexOf('Payment method');
+                const paidCol = head.indexOf('Paid on');
+                if (methodCol >= 0) sheet.getRange(row, methodCol + 1).setValue('Square (online)');
+                if (paidCol >= 0) sheet.getRange(row, paidCol + 1).setValue(paidOn);
+
+                return { ok: true, matched: true, changed: true, tab: sheet.getName() };
+            }
+        }
+    }
+
+    /* Money arrived with no row to put it against. Should never happen, since
+       the row is saved before anyone is sent to pay — but if it does, the
+       treasurer needs to know rather than find out from a bank statement. */
+    try {
+        MailApp.sendEmail({
+            to: TREASURER_EMAIL,
+            subject: 'GCCA — Square payment with no matching registration',
+            body: 'Square reports a completed payment that matches no row in the '
+                + 'events or membership spreadsheets.\n\n'
+                + 'Square order: ' + orderId + '\n'
+                + 'Amount: ' + (data.amount || '?') + '\n'
+                + 'Paid at: ' + paidOn + '\n\n'
+                + 'Look the order up in the Square dashboard to see who paid.'
+        });
+    } catch (err) {
+        console.error('Unmatched-payment email failed:', err);
+    }
+    return { ok: true, matched: false };
 }
 
 /* ==========================================================================
@@ -369,7 +465,15 @@ function sendAlert(type, data, tabName) {
         const who = data.name || data.email || 'Someone';
 
         const owing = Number(isMember ? data.fee : data.total) || 0;
-        const money = owing > 0 ? '$' + owing.toFixed(2) + ' CAD' : 'nothing to pay';
+        let money = owing > 0 ? '$' + owing.toFixed(2) + ' CAD' : 'nothing to pay';
+
+        /* This email goes out the moment they are sent to Square, before they
+           have paid — say so, or every abandoned checkout reads as a sale. */
+        if (data.squareOrder) {
+            money += ' — NOT YET PAID. They have been sent to Square to pay; the '
+                + 'Payment status column changes to "Paid" when the money arrives. '
+                + 'If it still says "' + AWAITING + '", they did not finish paying.';
+        }
 
         const lines = isMember
             ? ['Category: ' + (data.categoryLabel || ''),

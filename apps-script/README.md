@@ -130,6 +130,14 @@ Some are filled in by the script, some are deliberately blank for a human.
 the membership tab, so cash, cheque and e-transfer are recorded in the same
 place as online payments. One list for the treasurer, not three.
 
+For **online (Square) payments these are filled in automatically**. The row is
+saved the moment someone is sent to Square, so it starts as **Awaiting
+payment**. When Square confirms the money, the webhook (see DEPLOY.md) changes
+it to **Paid**, sets the method to *Square (online)* and stamps the date. A row
+still saying *Awaiting payment* means that person started checkout and never
+finished — the app dropped, they closed the tab, or the card was declined — and
+**no money was taken**. Cash and cheque rows start blank, for the treasurer.
+
 **Arrived** is for the door — tick as people show up.
 
 **Reminder 1/2/3 sent** on the membership tab are written by the

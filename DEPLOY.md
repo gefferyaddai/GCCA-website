@@ -80,6 +80,42 @@ Anything committed to the repo is public the moment the repo is.
 - [ ] **One real payment of a few dollars, refunded afterwards** — the only way
       to prove money actually reaches their account
 
+### Payment confirmation webhook
+
+A registration is saved to the sheet *before* the person is sent to Square, so
+an abandoned checkout still leaves a row. Those rows now say **Awaiting
+payment**, and `api/square-webhook.js` flips them to **Paid** when Square
+reports the money arrived. Without this webhook every row stays "Awaiting
+payment" forever.
+
+1. Square Developer dashboard → the GCCA application → **Webhooks →
+   Subscriptions → Add subscription**. URL:
+   `https://gccacalgary.com/api/square-webhook` (or the current site URL).
+   Events: **`payment.created`** and **`payment.updated`**. Do this separately
+   for sandbox and production — they are different subscriptions with
+   different keys.
+2. Copy the subscription's **Signature key**.
+3. Pick a long random string for the shared secret (`openssl rand -hex 32`).
+4. In Vercel, add:
+
+| Variable | Value |
+|---|---|
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | the signature key from step 2 |
+| `SQUARE_WEBHOOK_URL` | the URL from step 1, **exactly** as entered there |
+| `FORMS_ENDPOINT` | the Apps Script `/exec` URL (`SHEET_ENDPOINT` in `js/script.js`) |
+| `FORMS_PAYMENT_SECRET` | the string from step 3 |
+
+5. Apps Script → **Project Settings → Script Properties → Add**:
+   `PAYMENT_SECRET` = the same string from step 3.
+6. Paste in the new `Code.gs` and **Deploy → Manage deployments → New version**.
+   Opening the `/exec` URL should show version `2026-10-08a`.
+7. Use **Send test event** in the Square dashboard — the Vercel function log
+   should show it arrive (a test event has no matching row, which is fine).
+
+- [ ] Webhook subscription created (sandbox now, production at handover)
+- [ ] Four Vercel variables set, `PAYMENT_SECRET` set in Apps Script
+- [ ] A sandbox payment made end to end and the row turned **Paid**
+
 ---
 
 ## 3. Domain and email
