@@ -42,7 +42,23 @@ const SPREADSHEETS = {
    opening the /exec URL shows which version is actually deployed — editing the
    file changes nothing until "New version" is pushed, and this is the only way
    to tell the two apart from outside. */
-const VERSION = '2026-10-08a';
+const VERSION = '2026-11-04a';
+
+/* Events with limited seating, by the slug in js/events-data.js. `tab` is the
+   event's tab in the events spreadsheet, and the seats taken are added up from
+   its Adults and Children columns. So a row added by hand takes seats, and
+   deleting a row or lowering its numbers gives them back. */
+const SEAT_LIMITS = {
+    'family-christmas-party': { seats: 80, tab: 'Family Christmas Party (Members only) 2026' }
+};
+
+/* The same largest party the form allows, so a hand-made request cannot book
+   every remaining seat in one go. */
+const MAX_PER_BAND = 20;
+
+/* How long, in seconds, the public seat count may be reused before the sheet is
+   read again. Every registration clears it, so this only delays hand edits. */
+const SEATS_CACHE_SECONDS = 20;
 
 /* Who gets told when money is owed. Used for every alert this project sends:
    new registrations and membership applications here, and in Reminders.gs the
@@ -260,7 +276,23 @@ function doPost(e) {
 
         const tabName = typeof route.tab === 'function' ? route.tab(data) : route.tab;
         const sheet = sheetFor(route.book, tabName, route.columns);
+
+        /* Checked here, inside the lock, so two people cannot both be given the
+           last seat. */
+        const limit = type === 'registration' ? seatLimitFor(data.eventSlug) : null;
+        if (limit) {
+            const refusal = refuseSeats(limit, sheet, data);
+            if (refusal) return reply(refusal);
+        }
+
         sheet.appendRow(route.columns.map(col => valueFor(col[1], data)));
+
+        if (limit) {
+            /* Without the flush the next person's count, once this lock is
+               released, may not include this row yet. */
+            SpreadsheetApp.flush();
+            CacheService.getScriptCache().remove('seats');
+        }
 
         if (route.alert) sendAlert(type, data, tabName);
 
@@ -273,10 +305,92 @@ function doPost(e) {
     }
 }
 
-/* A GET is only ever someone checking the deployment is alive, and which
-   version of the code is really running. */
-function doGet() {
+/* A GET is someone checking the deployment is alive and which version of the
+   code is really running, or, with ?seats=1, the site asking for seat counts. */
+function doGet(e) {
+    if (e && e.parameter && e.parameter.seats) {
+        return reply({ ok: true, version: VERSION, seats: seatCounts() });
+    }
     return reply({ ok: true, service: 'GCCA Calgary forms', version: VERSION });
+}
+
+/* ==========================================================================
+   Limited seating
+   ========================================================================== */
+function seatLimitFor(slug) {
+    return Object.prototype.hasOwnProperty.call(SEAT_LIMITS, slug) ? SEAT_LIMITS[slug] : null;
+}
+
+/* Blank cells and stray text count as nobody, and a negative number cannot hand
+   seats back. */
+function headCount(value) {
+    return Math.max(0, Math.round(Number(value) || 0));
+}
+
+function seatsTaken(sheet) {
+    if (!sheet || sheet.getLastRow() < 2) return 0;
+
+    const values = sheet.getDataRange().getValues();
+    const head = values[0].map(h => String(h).trim());
+    const adults = head.indexOf('Adults');
+    const children = head.indexOf('Children');
+
+    /* Counting nothing would quietly remove the limit, so refuse instead. */
+    if (adults < 0 || children < 0) {
+        throw new Error('The "' + sheet.getName() + '" tab has no Adults or Children column.');
+    }
+
+    let taken = 0;
+    for (let r = 1; r < values.length; r++) {
+        taken += headCount(values[r][adults]) + headCount(values[r][children]);
+    }
+    return taken;
+}
+
+/* Returns the reply to send if this registration cannot be seated, or null if
+   it can. The posted numbers come from the browser, so they are cleaned up here
+   and the cleaned numbers are the ones written to the row. */
+function refuseSeats(limit, sheet, data) {
+    data.adults = Math.min(MAX_PER_BAND, headCount(data.adults));
+    data.youth = Math.min(MAX_PER_BAND, headCount(data.youth));
+
+    const wanted = data.adults + data.youth;
+    if (wanted < 1) return { ok: false, error: 'Add at least one ticket before registering.' };
+
+    const remaining = Math.max(0, limit.seats - seatsTaken(sheet));
+    if (wanted <= remaining) return null;
+
+    return {
+        ok: false,
+        code: 'seats',
+        remaining: remaining,
+        error: remaining > 0
+            ? 'Only ' + remaining + (remaining === 1 ? ' seat is' : ' seats are') + ' left. Please lower your numbers and try again.'
+            : 'This event is now fully booked.'
+    };
+}
+
+/* What the site shows. Never used to decide whether someone gets a seat; that
+   always reads the sheet itself, in refuseSeats. */
+function seatCounts() {
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get('seats');
+    if (cached) return JSON.parse(cached);
+
+    const book = bookFor('events');
+    const counts = {};
+    Object.keys(SEAT_LIMITS).forEach(slug => {
+        const limit = SEAT_LIMITS[slug];
+        const taken = seatsTaken(book.getSheetByName(limit.tab));
+        counts[slug] = {
+            capacity: limit.seats,
+            taken: taken,
+            remaining: Math.max(0, limit.seats - taken)
+        };
+    });
+
+    cache.put('seats', JSON.stringify(counts), SEATS_CACHE_SECONDS);
+    return counts;
 }
 
 /* ==========================================================================
@@ -378,6 +492,10 @@ function valueFor(source, data) {
    these events come round annually, and last year's guest list should not be
    sitting above this year's. */
 function eventTabName(data) {
+    /* A limited event always lands on the tab its seats are counted from. */
+    const limit = seatLimitFor(data.eventSlug);
+    if (limit) return limit.tab;
+
     const name = String(data.eventName || 'Unnamed event');
     const year = String(data.eventDateISO || '').slice(0, 4);
     const label = year ? name + ' ' + year : name;

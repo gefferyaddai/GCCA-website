@@ -390,7 +390,11 @@ async function postJSON(url, payload) {
     const result = await response.json().catch(() => ({}));
     /* Apps Script answers 200 even when it could not save the row, so the
        failure is in the body rather than the status code. */
-    if (result && result.ok === false) throw new Error(result.error || 'The server rejected that.');
+    if (result && result.ok === false) {
+        const refused = new Error(result.error || 'The server rejected that.');
+        refused.code = result.code;
+        throw refused;
+    }
     return result;
 }
 
@@ -723,7 +727,7 @@ function eventTag(ev, past) {
     const pricing = eventPricing(ev);
     if (pricing === 'paid') return '<span class="tag">Tickets ' + money(ev.adult) + '</span>';
     if (pricing === 'free') return '<span class="tag tag--free">Free · RSVP</span>';
-    return '<span class="tag tag--gold">Tickets · price to come</span>';
+    return '<span class="tag tag--gold">Cost TBD</span>';
 }
 
 /* The row of flyer thumbnails on a card.
@@ -788,7 +792,7 @@ function eventCardHTML(ev, options) {
 
     const cta = past
         ? '<p class="event-card__past-note">Thanks to everyone who came out.</p>'
-        : '<a class="link-arrow" href="' + esc(opts.href || '#register') + '" data-event-select="' + esc(ev.slug) + '">' +
+        : '<a class="link-arrow" href="' + esc(opts.href || '#register') + '" data-event-select="' + esc(ev.slug) + '" data-seats-cta="' + esc(ev.slug) + '">' +
         esc(CTA_LABEL[eventPricing(ev)]) +
         ' <svg width="17" height="17" aria-hidden="true"><use href="#i-arrow"/></svg></a>';
 
@@ -816,6 +820,10 @@ function eventCardHTML(ev, options) {
         '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-calendar"/></svg> ' + esc(when) + '</p>' +
         (where ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-pin"/></svg> ' + esc(where) + '</p>' : '') +
         (freeNote ? '<p class="event-card__meta"><svg aria-hidden="true"><use href="#i-ticket"/></svg> ' + esc(freeNote) + '</p>' : '') +
+        (!past && ev.capacity
+            ? '<p class="event-card__meta event-seats"><svg aria-hidden="true"><use href="#i-ticket"/></svg> ' +
+              '<span data-seats-for="' + esc(ev.slug) + '">Limited to ' + esc(ev.capacity) + ' seats</span></p>'
+            : '') +
         '<p class="event-card__text">' + esc(ev.blurb) + '</p>' +
         /* Flyers advertise something still to come, so they stay off the past
            archive — nobody needs the poster for an event already held. */
@@ -835,7 +843,7 @@ function populateEventSelect(upcoming) {
         if (pricing === 'free') {
             suffix = ev.meal > 0 ? ' (free, meal ' + money(ev.meal) + ')' : ' (free)';
         } else if (pricing === 'tba') {
-            suffix = ' (price to come)';
+            suffix = ' (cost TBD)';
         }
         const ages = ev.ages || {};
         return '<option value="' + esc(ev.slug) + '"' +
@@ -849,7 +857,8 @@ function populateEventSelect(upcoming) {
             ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
             ' data-iso="' + esc(ev.date || '') + '"' +
             ' data-name="' + esc(eventTitle(ev)) + '"' +
-            ' data-date="' + esc(shortDate(ev)) + '">' +
+            ' data-date="' + esc(shortDate(ev)) + '"' +
+            ' data-label="' + esc(eventTitle(ev) + ' — ' + shortDate(ev) + suffix) + '">' +
             esc(eventTitle(ev) + ' — ' + shortDate(ev) + suffix) + '</option>';
     }).join('');
 
@@ -949,6 +958,69 @@ function initEvents() {
 }
 
 /* ==========================================================================
+   Live seat counts, for events with a `capacity`
+   --------------------------------------------------------------------------
+   The count comes from the same Apps Script that saves registrations, and that
+   script is what actually refuses a booking when the event is full. Everything
+   here is display, so if the count cannot be fetched the page falls back to
+   "Limited to 80 seats" and the form still works.
+   ========================================================================== */
+const SEATS_POLL_MS = 30000;
+const seatState = {};
+
+function seatsLabel(seats) {
+    if (seats.remaining <= 0) return 'Fully booked';
+    return seats.remaining + ' of ' + seats.capacity + ' seats left';
+}
+
+function paintSeats() {
+    $$('[data-seats-for]').forEach(el => {
+        const seats = seatState[el.dataset.seatsFor];
+        if (!seats) return;
+        el.textContent = seatsLabel(seats);
+        el.closest('.event-seats').dataset.state = seats.remaining <= 0 ? 'full' : 'open';
+    });
+
+    $$('[data-seats-cta]').forEach(link => {
+        const seats = seatState[link.dataset.seatsCta];
+        if (seats) link.hidden = seats.remaining <= 0;
+    });
+
+    const select = document.getElementById('eventChoice');
+    if (select) {
+        $$('option', select).forEach(option => {
+            const seats = seatState[option.value];
+            if (!seats) return;
+            option.disabled = seats.remaining <= 0;
+            option.textContent = option.dataset.label + ' — ' + seatsLabel(seats).toLowerCase();
+        });
+    }
+
+    document.dispatchEvent(new CustomEvent('gcca:seats'));
+}
+
+async function refreshSeats() {
+    try {
+        const response = await fetch(CONFIG.api.registration + '?seats=1');
+        const data = await response.json();
+        if (!data || !data.seats) return;
+        Object.assign(seatState, data.seats);
+        paintSeats();
+    } catch (error) {
+        console.warn('[GCCA] Could not fetch seat counts:', error);
+    }
+}
+
+function initSeats() {
+    const all = Array.isArray(window.GCCA_EVENTS) ? window.GCCA_EVENTS : [];
+    if (!CONFIG.api.registration || !all.some(ev => ev.capacity && !hasPassed(ev))) return;
+
+    refreshSeats();
+    window.setInterval(() => { if (!document.hidden) refreshSeats(); }, SEATS_POLL_MS);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSeats(); });
+}
+
+/* ==========================================================================
    Event registration and ticketing
    ========================================================================== */
 
@@ -991,6 +1063,14 @@ function initRegistration() {
     const refundTerms = $('[data-refund-terms]');
     const nameField = $('#regName');
     const signature = $('#regSignature');
+    const seatsNotice = $('#seatsNotice');
+
+    /* The button is held off for two separate reasons: a save in progress, and
+       not enough seats. A seat count arriving mid-save must not re-enable it. */
+    let saving = false;
+    let seatsBlocked = false;
+    const syncSubmit = () => { if (submitBtn) submitBtn.disabled = saving || seatsBlocked; };
+    const setSaving = (value) => { saving = value; syncSubmit(); };
 
     /* The age bands beside the two quantity boxes. Most events use the standard
        wording written into events.html, which is what we keep here to fall back
@@ -1052,6 +1132,20 @@ function initRegistration() {
         const lineAdults = $('[data-line="adults"]');
         const lineYouth  = $('[data-line="youth"]');
         const lineMeal   = $('[data-line="meal"]');
+
+        const seats = order.slug ? seatState[order.slug] : null;
+        const isFull = !!seats && seats.remaining <= 0;
+        const tooMany = !!seats && !isFull && order.adults + order.youth > seats.remaining;
+        seatsBlocked = isFull || tooMany;
+        syncSubmit();
+        if (seatsNotice) {
+            seatsNotice.hidden = !seatsBlocked;
+            seatsNotice.textContent = isFull
+                ? 'This event is fully booked, so registration is closed.'
+                : tooMany
+                    ? 'Only ' + seats.remaining + (seats.remaining === 1 ? ' seat is' : ' seats are') + ' left. Please lower your numbers.'
+                    : '';
+        }
 
         // Age bands for the event in hand, standard wording for everything else.
         Object.keys(ageHints).forEach(key => {
@@ -1137,16 +1231,20 @@ function initRegistration() {
             totalEl.textContent = 'Free';
             btnLabel.textContent = 'Confirm your RSVP';
         } else if (order.pricing === 'tba') {
-            totalLabel.textContent = 'Ticket price';
-            totalEl.textContent = 'To come';
+            totalLabel.textContent = 'Cost';
+            totalEl.textContent = 'TBD';
             btnLabel.textContent = 'Register your interest';
         } else {
             totalLabel.textContent = 'Total (' + CONFIG.currency + ')';
             totalEl.textContent = money(order.total);
             btnLabel.textContent = order.total > 0 ? 'Pay ' + money(order.total) : 'Add at least one ticket';
         }
+
+        if (isFull) btnLabel.textContent = 'Fully booked';
+        else if (tooMany) btnLabel.textContent = 'Not enough seats left';
     }
 
+    document.addEventListener('gcca:seats', render);
     select.addEventListener('change', () => { setStatus(status, ''); render(); });
     [adultQty, youthQty, littleQty].filter(Boolean).forEach(input => input.addEventListener('input', render));
     $$('input[name="meal"]', form).forEach(input => input.addEventListener('change', render));
@@ -1178,7 +1276,7 @@ function initRegistration() {
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!validateForm(form)) return;
+        if (seatsBlocked || !validateForm(form)) return;
 
         const order = currentOrder();
         if (order.adults + order.youth < 1) {
@@ -1218,9 +1316,9 @@ function initRegistration() {
            record on this side at all. */
         let checkout = null;
         if (order.total > 0) {
-            submitBtn && submitBtn.setAttribute('disabled', 'true');
+            setSaving(true);
             checkout = await createCheckout(payload, status);
-            submitBtn && submitBtn.removeAttribute('disabled');
+            setSaving(false);
             if (checkout) {
                 payload.squareOrder = checkout.orderId || '';
                 payload.processingFee = checkout.fee || 0;
@@ -1235,11 +1333,12 @@ function initRegistration() {
             return;
         }
 
-        submitBtn && submitBtn.setAttribute('disabled', 'true');
+        setSaving(true);
         setStatus(status, 'Saving your spot…', 'working');
 
         try {
             await postJSON(CONFIG.api.registration, payload);
+            if (seatState[order.slug]) refreshSeats();
 
             /* Saved. Now — and only now — hand them to Square to pay. */
             if (checkout) {
@@ -1272,9 +1371,16 @@ function initRegistration() {
             ]);
         } catch (error) {
             console.error(error);
-            setStatus(status, 'We couldn\'t save that. Please try again, or email gccacalgary@gmail.com.', 'error');
+            /* Someone else took the seats between the last count and this save.
+               Nothing was saved, and no payment was started. */
+            if (error.code === 'seats') {
+                setStatus(status, error.message, 'error');
+                refreshSeats();
+            } else {
+                setStatus(status, 'We couldn\'t save that. Please try again, or email gccacalgary@gmail.com.', 'error');
+            }
         } finally {
-            submitBtn && submitBtn.removeAttribute('disabled');
+            setSaving(false);
         }
     });
 
@@ -2490,6 +2596,7 @@ function init() {
     initMembership();
     initFeedbackButton();
     initRegistration();
+    initSeats();
     initTabs();
     initReturnMessages();
     initDocContents();

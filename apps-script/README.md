@@ -36,6 +36,26 @@ Landscape. The heading row repeats on every page.
 
 ---
 
+## Limited seating
+
+`SEAT_LIMITS` at the top of `Code.gs` caps an event's seats. Each adult and child
+takes one, added up from the **Adults** and **Children** columns of the event's
+tab. A registration that would go over the limit is refused before anything is
+saved, and the site shows the seats left and closes the form at zero.
+
+The tab is the count, so the executive can manage it directly:
+
+- **Someone cancels:** delete their row, or lower the numbers on it. The seats
+  come back within about a minute.
+- **Someone registers by phone or at the door:** add a row. It takes seats.
+
+**Adding a limit to another event:** add it to `SEAT_LIMITS` with the event's
+exact tab name, set `capacity` on the event in `js/events-data.js`, and deploy a
+new version. On an event with a price, a row marked *Awaiting payment* holds its
+seats until someone deletes it, even if that person never finishes paying.
+
+---
+
 ## Setting it up
 
 **1. Create the three spreadsheets**

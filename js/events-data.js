@@ -60,6 +60,12 @@
                  Google can read, so describe the flyer, and keep the date,
                  time, venue and price in the fields above as well — never let
                  the flyer be the only place a detail appears.
+     capacity    Optional. Number of seats, for events with limited seating. The
+                 card and the form then show the seats left, and registration
+                 closes when none remain. Adults and children each take a seat.
+                 This number is only for display until the live count arrives:
+                 the limit itself is SEAT_LIMITS in apps-script/Code.gs, so
+                 change both, then deploy a new version of the script.
      ages        Only for events whose age bands differ from that standard.
                  { adult: '19+', youth: '6–18, 5 and under free' } rewrites the
                  two hints on the registration form while that event is chosen,
@@ -158,10 +164,11 @@ window.GCCA_EVENTS = [
         title: 'Family Christmas Party',
         venue: 'SVG Hall',
         address: '2110 41 Ave NE, Calgary, AB T2E 8Z7',
-        time: '2:00pm',
+        time: '1:00pm – 5:00pm',
         date: '2026-12-06',
         blurb: 'Come out for a magical afternoon with the family.',
         image: 'assets/event-christmas-party.jpg',
+        capacity: 80,
         membersOnly: true,
         special: true,
         adult: 0,
@@ -170,15 +177,15 @@ window.GCCA_EVENTS = [
     {
         slug: 'bowling-pizza-party',
         title: 'Bowling & Pizza Party',
-        venue: 'Venue to be confirmed',
-        address: '',
+        venue: 'Toppler Bowl',
+        address: '7640 Fairmount Dr SE, Calgary, AB T2H 0X9',
         time: '',
-        date: '2027-01-29',
+        date: '2027-01-30',
         blurb: 'Roll in for strikes, stay for slices. Bowling and pizza night starts with YOU.',
         image: 'assets/event-bowling.jpg',
         membersOnly: true,
-        adult: 0,
-        youth: 0
+        adult: null,
+        youth: null
     },
     {
         slug: 'rgm-games-night',

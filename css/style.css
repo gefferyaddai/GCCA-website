@@ -2942,6 +2942,23 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
 
 /* Two meta lines now sit under each event title */
 .event-card__meta + .event-card__meta { margin-top: -.55rem; }
+
+/* Limited seating: the live count on a card, and the note on the form */
+.event-seats { font-weight: 600; color: var(--green-800); }
+.event-seats[data-state="full"] { color: #9A0E1E; }
+.event-seats[data-state="full"] svg { color: currentColor; }
+.link-arrow[hidden] { display: none; }
+.seats-notice {
+    margin: 10px 0 0;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    background: #FCEDEE;
+    border: 1px solid #F3C9CE;
+    color: #9A0E1E;
+    font-size: .92rem;
+    font-weight: 500;
+}
+.seats-notice[hidden] { display: none; }
 /* --------------------------------------------------------------------------
    28. Governance — registration facts and by-laws
    -------------------------------------------------------------------------- */
