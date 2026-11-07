@@ -66,6 +66,12 @@
                  This number is only for display until the live count arrives:
                  the limit itself is SEAT_LIMITS in apps-script/Code.gs, so
                  change both, then deploy a new version of the script.
+     childGifts  true for events where every child gets a gift (the Christmas
+                 party). The form then asks for each child's name and whether
+                 they are a boy or a girl, one row per child in the Children
+                 box, and both are required. They land in the "Gift list"
+                 column of the event's tab. The script also has to know the
+                 event: add its slug to GIFT_EVENTS in apps-script/Code.gs.
      ages        Only for events whose age bands differ from that standard.
                  { adult: '19+', youth: '6–18, 5 and under free' } rewrites the
                  two hints on the registration form while that event is chosen,
@@ -169,6 +175,7 @@ window.GCCA_EVENTS = [
         blurb: 'Come out for a magical afternoon with the family.',
         image: 'assets/event-christmas-party.jpg',
         capacity: 80,
+        childGifts: true,
         membersOnly: true,
         special: true,
         adult: 0,
