@@ -2959,6 +2959,19 @@ a { text-underline-offset: .18em; text-decoration-thickness: from-font; }
     font-weight: 500;
 }
 .seats-notice[hidden] { display: none; }
+
+/* Children's gifts (Christmas party): a name and boy/girl per child */
+.gift-rows { display: grid; gap: 14px; }
+.gift-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 12px;
+}
+.gift-set[hidden],
+.field[hidden] { display: none; }   /* .field's display:flex would otherwise beat [hidden] */
+@media (max-width: 620px) {
+    .gift-row { grid-template-columns: 1fr; }
+}
 /* --------------------------------------------------------------------------
    28. Governance — registration facts and by-laws
    -------------------------------------------------------------------------- */
