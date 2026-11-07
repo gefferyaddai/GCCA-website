@@ -56,6 +56,20 @@ seats until someone deletes it, even if that person never finishes paying.
 
 ---
 
+## Children's gifts (Christmas party)
+
+For events listed in `GIFT_EVENTS` at the top of `Code.gs`, the form asks for
+each child's name and whether they're a boy or a girl. These land in a
+**Gift list** column at the far right of the event's tab, like
+`Liam (Boy); Ava (Girl)`, and appear in the alert email too. If the tab already
+existed, the column is added the next time someone registers. Rows from before
+then have it blank.
+
+To use it for another event, add its slug to `GIFT_EVENTS`, set
+`childGifts: true` on it in `js/events-data.js`, and deploy a new version.
+
+---
+
 ## Setting it up
 
 **1. Create the three spreadsheets**
