@@ -854,6 +854,7 @@ function populateEventSelect(upcoming) {
             ' data-youth-ages="' + esc(ages.youth || '') + '"' +
             ' data-meal="' + (Number(ev.meal) || 0) + '"' +
             ' data-free-under="' + (Number(ev.freeUnder) || 0) + '"' +
+            ' data-child-gifts="' + (ev.childGifts ? 'yes' : '') + '"' +
             ' data-tier="' + (ev.special ? 'special' : 'standard') + '"' +
             ' data-iso="' + esc(ev.date || '') + '"' +
             ' data-name="' + esc(eventTitle(ev)) + '"' +
@@ -1064,6 +1065,8 @@ function initRegistration() {
     const nameField = $('#regName');
     const signature = $('#regSignature');
     const seatsNotice = $('#seatsNotice');
+    const giftField = $('#giftField');
+    const giftRows = $('#giftRows');
 
     /* The button is held off for two separate reasons: a save in progress, and
        not enough seats. A seat count arriving mid-save must not re-enable it. */
@@ -1094,6 +1097,51 @@ function initRegistration() {
         return value;
     }
 
+    /* One name and boy/girl row per child, for events that give every child a
+       gift. Rows are only added or taken off the end, so lowering the count by
+       one does not wipe what was typed for the others. The inputs carry no
+       `name`, so formData skips them; the submit handler collects them into a
+       single list instead. They only exist while shown, which keeps their
+       `required` from blocking every other event's form. */
+    function giftRowHTML(n) {
+        return '<div class="gift-row">' +
+            '<div class="field">' +
+            '<label for="giftName' + n + '">Child ' + n + '’s name <span class="req" aria-hidden="true">*</span></label>' +
+            '<input type="text" id="giftName' + n + '" data-gift-name autocomplete="off" required>' +
+            '<p class="field__error" data-error-for="giftName' + n + '"></p>' +
+            '</div>' +
+            '<div class="field">' +
+            /* Every row's label reads the same on screen, so a screen reader is
+               also told which child it belongs to. */
+            '<label for="giftGender' + n + '"><span class="visually-hidden">Child ' + n + ': </span>Boy or girl? <span class="req" aria-hidden="true">*</span></label>' +
+            '<select id="giftGender' + n + '" data-gift-gender required>' +
+            '<option value="">Choose</option><option value="Boy">Boy</option><option value="Girl">Girl</option>' +
+            '</select>' +
+            '<p class="field__error" data-error-for="giftGender' + n + '"></p>' +
+            '</div>' +
+            '</div>';
+    }
+
+    function syncGiftRows(count) {
+        if (!giftField || !giftRows) return;
+        giftField.hidden = count < 1;
+        while (giftRows.children.length > count) giftRows.lastElementChild.remove();
+        while (giftRows.children.length < count) {
+            giftRows.insertAdjacentHTML('beforeend', giftRowHTML(giftRows.children.length + 1));
+        }
+    }
+
+    /* "Liam (Boy); Ava (Girl)" — one cell on the sheet, read by whoever buys
+       and labels the gifts. */
+    function giftList() {
+        if (!giftRows) return '';
+        return $$('.gift-row', giftRows).map(row => {
+            const name = ($('[data-gift-name]', row).value || '').trim().replace(/[;()]/g, ' ').replace(/\s+/g, ' ');
+            const gender = $('[data-gift-gender]', row).value;
+            return name + ' (' + gender + ')';
+        }).join('; ');
+    }
+
     function currentOrder() {
         const option = select.selectedOptions[0];
         const pricing = option && select.value ? (option.dataset.pricing || 'free') : '';
@@ -1102,6 +1150,7 @@ function initRegistration() {
         const mealPrice  = option ? Number(option.dataset.meal || 0) : 0;
         const tier = option && select.value ? (option.dataset.tier || 'standard') : '';
         const freeUnder = option ? Number(option.dataset.freeUnder || 0) : 0;
+        const childGifts = !!option && !!select.value && option.dataset.childGifts === 'yes';
         const adults = clampQty(adultQty);
         const youth  = clampQty(youthQty);
         // Only counted where the event actually offers it, so a stale number
@@ -1118,7 +1167,7 @@ function initRegistration() {
             date: option ? (option.dataset.date || '') : '',
             iso:  option ? (option.dataset.iso || '') : '',
             pricing, adults, youth, adultPrice, youthPrice, tier,
-            mealPrice, wantsMeal, meals, littles, freeUnder,
+            mealPrice, wantsMeal, meals, littles, freeUnder, childGifts,
             ages: {
                 adult: option ? (option.dataset.adultAges || '') : '',
                 youth: option ? (option.dataset.youthAges || '') : ''
@@ -1164,6 +1213,9 @@ function initRegistration() {
                 littleHint.textContent = (order.freeUnder - 1) + ' and under';
             }
         }
+
+        // A gift row per child, only for events that give gifts.
+        syncGiftRows(order.childGifts ? order.youth : 0);
 
         // The meal choice only belongs on screen for events that offer one.
         if (mealField) {
@@ -1296,6 +1348,7 @@ function initRegistration() {
             youth: order.youth,
             /* Not charged for, but the kitchen needs the number. */
             littles: order.littles,
+            giftList: order.childGifts ? giftList() : '',
             meals: order.meals,
             mealPrice: order.mealPrice,
             mealTotal: order.meals * order.mealPrice,
@@ -1367,6 +1420,7 @@ function initRegistration() {
                     + (order.youth ? ', ' + order.youth + ' child' + (order.youth === 1 ? '' : 'ren') : '')
                     + (order.littles ? ', ' + order.littles + ' eating free' : '')],
                 ['Meals', order.meals ? String(order.meals) : ''],
+                ['Gifts for', payload.giftList],
                 ['Total', order.total > 0 ? money(order.total) : 'Free']
             ]);
         } catch (error) {
