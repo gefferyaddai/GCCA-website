@@ -298,6 +298,16 @@
                 </div>
               </div>
 
+              <!-- Events where every child gets a gift (the Christmas party).
+                   Shown only when the chosen event sets `childGifts` in
+                   events-data.js. One row per child in the Children box; the
+                   script builds the rows, so they come and go with the count. -->
+              <fieldset class="choice-set field--full gift-set" id="giftField" hidden>
+                <legend class="fieldset__legend">Children's gifts</legend>
+                <p class="choice-set__intro">Santa brings every child a gift. Tell us each child's name and whether they're a boy or a girl so we can have the right one ready.</p>
+                <div class="gift-rows" id="giftRows"></div>
+              </fieldset>
+
               <!-- Meetings that offer a meal. Shown only when the chosen event
                    has a `meal` price in events-data.js; hidden otherwise. -->
               <fieldset class="choice-set field--full" id="mealField" hidden>

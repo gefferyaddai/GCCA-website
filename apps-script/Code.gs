@@ -42,7 +42,7 @@ const SPREADSHEETS = {
    opening the /exec URL shows which version is actually deployed — editing the
    file changes nothing until "New version" is pushed, and this is the only way
    to tell the two apart from outside. */
-const VERSION = '2026-11-04a';
+const VERSION = '2026-11-07a';
 
 /* Events with limited seating, by the slug in js/events-data.js. `tab` is the
    event's tab in the events spreadsheet, and the seats taken are added up from
@@ -118,6 +118,21 @@ const EVENT_COLUMNS = [
     ['Office notes',    null]
 ];
 
+/* Events where every child gets a gift, by the slug in js/events-data.js (the
+   event also needs `childGifts: true` there). Their tabs get one more column:
+   each child's name and whether they are a boy or a girl, as the form sent it.
+   It goes on the end so a tab made before this column existed is extended in
+   place rather than refused — see sheetFor. */
+const GIFT_EVENTS = ['family-christmas-party'];
+
+const GIFT_EVENT_COLUMNS = EVENT_COLUMNS.concat([
+    ['Gift list',       'giftList']
+]);
+
+function eventColumnsFor(data) {
+    return GIFT_EVENTS.indexOf(data.eventSlug) >= 0 ? GIFT_EVENT_COLUMNS : EVENT_COLUMNS;
+}
+
 /* MEMBERSHIP — one tab, not one per year. Renewals are the whole point of this
    sheet, and "who has not renewed yet" is impossible to see if last year's
    members are on a different tab. */
@@ -173,12 +188,13 @@ const NEWSLETTER_COLUMNS = [
 ];
 
 /* Where each form type goes. `tab` is a fixed name, or a function that works
-   one out from the submission — that is how each event gets its own tab. */
+   one out from the submission — that is how each event gets its own tab.
+   `columns` can be a function too, for events that collect something extra. */
 const ROUTES = {
     registration: {
         book: 'events',
         tab: (d) => eventTabName(d),
-        columns: EVENT_COLUMNS,
+        columns: (d) => eventColumnsFor(d),
         alert: true
     },
     membership: {
@@ -275,7 +291,8 @@ function doPost(e) {
         if (!route) return reply({ ok: false, error: 'Unknown form type: ' + type });
 
         const tabName = typeof route.tab === 'function' ? route.tab(data) : route.tab;
-        const sheet = sheetFor(route.book, tabName, route.columns);
+        const columns = typeof route.columns === 'function' ? route.columns(data) : route.columns;
+        const sheet = sheetFor(route.book, tabName, columns);
 
         /* Checked here, inside the lock, so two people cannot both be given the
            last seat. */
@@ -285,7 +302,7 @@ function doPost(e) {
             if (refusal) return reply(refusal);
         }
 
-        sheet.appendRow(route.columns.map(col => valueFor(col[1], data)));
+        sheet.appendRow(columns.map(col => valueFor(col[1], data)));
 
         if (limit) {
             /* Without the flush the next person's count, once this lock is
@@ -483,9 +500,15 @@ function reply(payload) {
 
 function valueFor(source, data) {
     if (source === null) return '';                  // left blank for humans
-    if (typeof source === 'function') return source(data);
-    const value = data[source];
-    return (value === undefined || value === null) ? '' : value;
+    const value = typeof source === 'function' ? source(data) : data[source];
+    if (value === undefined || value === null) return '';
+
+    /* Sheets treats text starting with = + - or @ as a formula. A phone number
+       like "+1 403 555 0100" then turns into #ERROR!, and a name typed as a
+       formula would run when the executive opens the sheet. The leading
+       apostrophe is how Sheets is told "this is text"; it is not shown. */
+    if (typeof value === 'string' && /^[=+\-@]/.test(value)) return "'" + value;
+    return value;
 }
 
 /* One tab per event, per year — "Carifest 2026". The year matters because
@@ -545,8 +568,28 @@ function sheetFor(bookKey, tabName, columns) {
     const existing = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
         .map(h => String(h).trim());
 
+    /* A note typed in a cell off to the right of the last heading stretches
+       the row with blank headings. Those are not columns of ours, so they must
+       not make the tab look wrongly built and refuse every registration. */
+    while (existing.length && existing[existing.length - 1] === '') existing.pop();
+
     const matches = existing.length === headings.length
         && headings.every((h, i) => existing[i] === h);
+
+    /* The tab matches so far but is missing columns added on the end since it
+       was made (the Christmas party's Gift list). Nothing already there moves,
+       so add the new headings and carry on; older rows just leave them blank. */
+    const isPrefix = existing.length < headings.length
+        && existing.every((h, i) => headings[i] === h);
+
+    if (isPrefix) {
+        const added = headings.slice(existing.length);
+        sheet.getRange(1, existing.length + 1, 1, added.length)
+            .setValues([added])
+            .setFontWeight('bold')
+            .setBackground('#F5F1E1');
+        return sheet;
+    }
 
     if (!matches) {
         if (sheet.getLastRow() === 1) {
@@ -600,10 +643,11 @@ function sendAlert(type, data, tabName) {
                'Household: ' + (data.household || '—')]
             : ['Event: ' + (data.eventName || ''),
                'Adults: ' + (data.adults || 0) + ', children: ' + (data.youth || 0),
-               'Meals: ' + (data.meals || 0),
-               'Total: ' + money,
+               'Meals: ' + (data.meals || 0)]
+            .concat(data.giftList ? ['Gifts for: ' + data.giftList] : [])
+            .concat(['Total: ' + money,
                'Refund tier: ' + (data.refundTier || ''),
-               'Notes: ' + (data.notes || '—')];
+               'Notes: ' + (data.notes || '—')]);
 
         const where = isMember
             ? 'The full row is on the "Members" tab of the GCCA membership spreadsheet.'
